@@ -6,8 +6,8 @@ on:
       - '*-rc'
 
 env:
-  SERVICE_NAME: magazine-chat-uat
-  GCP_REGION: ${{ runner.env.GCP_REGION }}
+  SERVICE_NAME: ${{ vars.SERVICE_NAME_API }}
+  GCP_REGION: ${{ vars.GCP_REGION }}
 
 jobs:
   deploy:
