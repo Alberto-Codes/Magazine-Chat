@@ -22,13 +22,13 @@ jobs:
         run: echo "::set-output name=TAG::${GITHUB_REF#refs/tags/}"
         shell: bash
 
-      - name: Setup gcloud environment
-        uses: google-github-actions/setup-gcloud@v2
-
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Setup gcloud environment
+        uses: google-github-actions/setup-gcloud@v2
 
       - name: Configure Docker
         run: gcloud auth configure-docker
