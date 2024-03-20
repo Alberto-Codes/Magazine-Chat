@@ -14,6 +14,10 @@
     - [Bugfix Process with UAT Validation:](#bugfix-process-with-uat-validation)
     - [Notes on Process](#notes-on-process)
   - [Rollback Procedures](#rollback-procedures)
+  - [Release Communication](#release-communication)
+  - [Naming Conventions](#naming-conventions)
+  - [Automation](#automation)
+  - [Security Practices for Deployment](#security-practices-for-deployment)
 
 This document outlines the steps and conventions we follow for releasing software in this project. As a solo developer, this process is streamlined but designed to accommodate growth and collaboration in the future.
 
@@ -34,6 +38,9 @@ This document outlines the steps and conventions we follow for releasing softwar
 
 - Merge the `release/vX.Y.Z` branch into `UAT` and tag the merge commit with `vX.Y.Z-rc` and a brief annotation about the release candidate.
 - This tag will trigger a GitHub Actions workflow to deploy the release candidate to the UAT environment on Google Cloud Platform (GCP), accessible via Cloud Run.
+- Gather feedback during UAT and incorporate necessary changes:
+  - Minor changes can be made directly in the `UAT` branch and redeployed with the same `-rc` tag.
+  - Significant changes may require creating a new `-rc` version and restarting the UAT process.
 
 ## Tagging Convention
 
@@ -57,7 +64,7 @@ This document outlines the steps and conventions we follow for releasing softwar
 1. **Identify Critical Issue**: When a production issue requires an urgent hotfix (e.g., `v2.5.3`).
 
 2. **Create and Apply Hotfix**:
-   1. Create a new branch for the hotfix:
+   1. Create a new branch for the hotfix, incrementing the patch version (e.g., `v2.5.4`):
       ```bash
       git checkout -b hotfix/v2.5.4 main
       ```
@@ -102,6 +109,12 @@ This document outlines the steps and conventions we follow for releasing softwar
       git tag -a v1.2.1 -m "Final release for bugfix v1.2.1"
       git push origin v1.2.1
       ```
+   2. Merge the fixes back into the `develop` branch:
+      ```bash
+      git checkout develop
+      git merge main
+      git push origin develop
+      ```
 
 ### Notes on Process
 
@@ -121,3 +134,33 @@ In case of issues with a new release, follow these steps to revert to a previous
    git checkout main
    git reset --hard v1.2.0
    git push --force origin main
+   ```
+   **Note**: Be cautious when using `git push --force`, as it overwrites the remote history. Ensure that you have communicated with your team (if applicable) before proceeding, as this action can affect other collaborators.
+3. Redeploy the last stable version to the production environment using the appropriate deployment process.
+4. Investigate and address the issues that caused the rollback before attempting a new release.
+
+## Release Communication
+
+- Prepare release notes and change logs detailing the changes, fixes, and new features included in each release.
+- Share the release notes with stakeholders and users through appropriate channels (e.g., email, project management tools, or release announcements).
+- Include any relevant instructions or migration steps required for users to update to the new version.
+
+## Naming Conventions
+
+- **Branch Names**: Use lowercase and hyphens for separators (e.g., `feature/add-user-authentication`, `bugfix/fix-login-issue`).
+- **Commit Messages**: Write clear and concise commit messages that describe the changes made. Use the imperative mood and present tense (e.g., "Add feature X", "Fix bug Y").
+- **Pull Request Titles**: Follow a similar format to commit messages, providing a brief summary of the changes included in the pull request.
+
+## Automation
+
+- **GitHub Actions** automates the deployment process to both UAT and production environments based on tagging conventions.
+- Workflows are defined in the `.github/workflows/` directory and include steps for deployment to GCP Cloud Run.
+
+## Security Practices for Deployment
+
+- Ensure that production secrets and sensitive credentials are securely stored and managed, using tools like Google Secret Manager or Hashicorp Vault.
+- Use the principle of least privilege when configuring IAM roles and permissions for the CI/CD pipeline, ensuring that only necessary access is granted.
+- Regularly rotate and update credentials used in the deployment process to maintain security.
+- Implement security scanning and vulnerability checks as part of the CI/CD pipeline to identify and address potential security issues before deployment.
+
+By following these practices and continuously monitoring and improving the deployment process, we can ensure a secure and reliable release workflow.
