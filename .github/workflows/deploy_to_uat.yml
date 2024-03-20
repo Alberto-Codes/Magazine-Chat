@@ -1,0 +1,42 @@
+name: Deploy to UAT
+
+on:
+  push:
+    tags:
+      - '*-rc'
+
+env:
+  SERVICE_NAME: magazine-chat-uat
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: UAT
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Extract tag name
+        id: extract_tag
+        run: echo "::set-output name=TAG::${GITHUB_REF#refs/tags/}"
+        shell: bash
+
+      - name: Set up Google Cloud Platform
+        uses: google-github-actions/setup-gcloud@v0
+        with:
+          service_account_key: ${{ secrets.GCP_SA_KEY }}
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Build and push Docker image
+        run: |
+          docker build -t gcr.io/${{ env.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME }}:${{ steps.extract_tag.outputs.TAG }} .
+          docker push gcr.io/${{ env.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME }}:${{ steps.extract_tag.outputs.TAG }}
+
+      - name: Deploy to Cloud Run (UAT)
+        run: |
+          gcloud run deploy ${{ env.SERVICE_NAME }} \
+            --image gcr.io/${{ env.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME }}:${{ steps.extract_tag.outputs.TAG }} \
+            --region ${{ env.GCP_REGION }} \
+            --platform managed \
+            --allow-unauthenticated
