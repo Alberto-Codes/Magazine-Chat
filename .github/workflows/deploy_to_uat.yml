@@ -1,0 +1,30 @@
+name: Deploy to UAT
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - '*-rc'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Google Cloud Platform
+      uses: google-github-actions/setup-gcloud@v0
+      with:
+        service_account_key: ${{ secrets.GCP_SA_KEY_UAT }}
+        project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+    - name: Deploy to Cloud Run (UAT)
+      run: |
+        gcloud run deploy magazine-chat-uat \
+          --image gcr.io/$PROJECT_ID/magazine-chat:${{ github.ref_name }} \
+          --region your-region \
+          --platform managed \
+          --allow-unauthenticated
+      env:
+        PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
