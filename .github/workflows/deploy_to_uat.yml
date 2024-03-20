@@ -7,7 +7,7 @@ on:
 
 env:
   SERVICE_NAME: magazine-chat-uat
-
+  
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -22,11 +22,13 @@ jobs:
         run: echo "::set-output name=TAG::${GITHUB_REF#refs/tags/}"
         shell: bash
 
-      - name: Set up Google Cloud Platform
-        uses: google-github-actions/setup-gcloud@v0
+      - name: Setup gcloud environment
+        uses: google-github-actions/setup-gcloud@latest # Update this to use the latest version
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@latest # Use the latest version
         with:
-          service_account_key: ${{ secrets.GCP_SA_KEY }}
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
 
       - name: Build and push Docker image
         run: |
