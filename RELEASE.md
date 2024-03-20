@@ -1,5 +1,20 @@
 # Release Process Documentation
 
+## Table of Contents
+- [Release Process Documentation](#release-process-documentation)
+  - [Table of Contents](#table-of-contents)
+  - [Versioning](#versioning)
+  - [Development Workflow](#development-workflow)
+  - [Release Branch Creation](#release-branch-creation)
+  - [UAT Deployment](#uat-deployment)
+  - [Tagging Convention](#tagging-convention)
+  - [Production Deployment](#production-deployment)
+  - [Hotfixes and Bugfixes](#hotfixes-and-bugfixes)
+    - [Hotfix Process for Immediate Production Deployment:](#hotfix-process-for-immediate-production-deployment)
+    - [Bugfix Process with UAT Validation:](#bugfix-process-with-uat-validation)
+    - [Notes on Process](#notes-on-process)
+  - [Rollback Procedures](#rollback-procedures)
+
 This document outlines the steps and conventions we follow for releasing software in this project. As a solo developer, this process is streamlined but designed to accommodate growth and collaboration in the future.
 
 ## Versioning
@@ -42,47 +57,51 @@ This document outlines the steps and conventions we follow for releasing softwar
 1. **Identify Critical Issue**: When a production issue requires an urgent hotfix (e.g., `v2.5.3`).
 
 2. **Create and Apply Hotfix**:
-   ```bash
-   git checkout -b hotfix/v2.5.4 main
-   # Apply necessary changes
-   git commit -am "Apply urgent hotfix for issue XYZ"
-   ```
+   1. Create a new branch for the hotfix:
+      ```bash
+      git checkout -b hotfix/v2.5.4 main
+      ```
+   2. Apply necessary changes and commit:
+      ```bash
+      git commit -am "Apply urgent hotfix for issue XYZ"
+      ```
 
 3. **Deploy Hotfix to Production**:
-   - Merge the hotfix into `main` and deploy:
-     ```bash
-     git checkout main
-     git merge hotfix/v2.5.4
-     git tag -a v2.5.4 -m "Hotfix v2.5.4"
-     git push origin main --tags
-     ```
-   - This tag triggers the production deployment.
+   1. Merge the hotfix into `main` and deploy:
+      ```bash
+      git checkout main
+      git merge hotfix/v2.5.4
+      git tag -a v2.5.4 -m "Hotfix v2.5.4"
+      git push origin main --tags
+      ```
+   2. This tag triggers the production deployment.
 
 4. **Sync Hotfix with Develop**:
-   ```bash
-   git checkout develop
-   git merge hotfix/v2.5.4
-   git push origin develop
-   ```
+   1. Merge the hotfix into the `develop` branch:
+      ```bash
+      git checkout develop
+      git merge hotfix/v2.5.4
+      git push origin develop
+      ```
 
 ### Bugfix Process with UAT Validation:
 
 1. **Apply Bugfix in Develop**: Address non-critical bugs in the `develop` branch.
 
 2. **Prepare for UAT**:
-   - Merge fixes into a release branch and then into `main`.
-   - Tag the merge in `main` with `-rc` to indicate readiness for UAT testing:
-     ```bash
-     git tag -a v1.2.1-rc -m "Release candidate for bugfixes"
-     git push origin v1.2.1-rc
-     ```
+   1. Merge fixes into a release branch and then into `main`.
+   2. Tag the merge in `main` with `-rc` to indicate readiness for UAT testing:
+      ```bash
+      git tag -a v1.2.1-rc -m "Release candidate for bugfixes"
+      git push origin v1.2.1-rc
+      ```
 
 3. **UAT and Production Deployment**:
-   - Upon successful UAT, tag the commit without `-rc` and deploy to production:
-     ```bash
-     git tag -a v1.2.1 -m "Final release for bugfix v1.2.1"
-     git push origin v1.2.1
-     ```
+   1. Upon successful UAT, tag the commit without `-rc` and deploy to production:
+      ```bash
+      git tag -a v1.2.1 -m "Final release for bugfix v1.2.1"
+      git push origin v1.2.1
+      ```
 
 ### Notes on Process
 
@@ -92,7 +111,13 @@ This document outlines the steps and conventions we follow for releasing softwar
 
 By distinguishing between the immediacy of hotfixes and the structured deployment of bugfixes, this process ensures both critical production issues and less urgent bugs are managed effectively, maintaining the stability and integrity of the production environment.
 
-## Automation
+## Rollback Procedures
 
-- **GitHub Actions** automates the deployment process to both UAT and production environments based on tagging conventions.
-- Workflows are defined in `.github/workflows/` and include steps for deployment to GCP Cloud Run.
+In case of issues with a new release, follow these steps to revert to a previous stable version:
+
+1. Identify the last stable version (e.g., `v1.2.0`).
+2. Check out the `main` branch and reset it to the last stable version:
+   ```bash
+   git checkout main
+   git reset --hard v1.2.0
+   git push --force origin main
