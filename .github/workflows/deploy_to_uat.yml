@@ -7,7 +7,7 @@ on:
 
 env:
   SERVICE_NAME: magazine-chat-uat
-  GCP_REGION: ${{ env.GCP_REGION }}
+  GCP_REGION: ${{ runner.env.GCP_REGION }}
 
 jobs:
   deploy:
