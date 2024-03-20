@@ -23,10 +23,10 @@ jobs:
         shell: bash
 
       - name: Setup gcloud environment
-        uses: google-github-actions/setup-gcloud@latest # Update this to use the latest version
+        uses: google-github-actions/setup-gcloud@v2 # Update this to use the latest version
 
       - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@latest # Use the latest version
+        uses: google-github-actions/auth@v2 # Use the latest version
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
 
