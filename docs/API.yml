@@ -1,0 +1,16 @@
+openapi: 3.0.0
+info:
+  title: Magazine Chat API
+  version: 1.0.0
+paths:
+  /:
+    get:
+      summary: Returns a greeting
+      responses:
+        '200':
+          description: A simple greeting message
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Hello, World!
