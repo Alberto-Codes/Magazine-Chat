@@ -2,6 +2,9 @@ openapi: 3.0.0
 info:
   title: Magazine Chat API
   version: 1.0.0
+servers:
+  - url: http://localhost:8080
+    description: Local Server
 paths:
   /:
     get:
@@ -14,3 +17,19 @@ paths:
               schema:
                 type: string
                 example: Hello, World!
+  /docs:
+    get:
+      summary: Serves the OpenAPI documentation
+      responses:
+        '200':
+          description: The OpenAPI Specification document
+          content:
+            application/x-yaml:
+              schema:
+                type: string
+                example: |-
+                  openapi: 3.0.0
+                  info:
+                    title: Example API
+                    version: "1.0"
+                  ...
