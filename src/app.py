@@ -25,7 +25,7 @@ def create_app(test_config=None):
         title='Content Management API',
         description='A comprehensive API for content interaction and data processing.',
         doc='/api-docs',
-        prefix='/api/v1'
+        prefix='/api'
     )
 
     # Add namespaces
