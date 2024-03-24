@@ -39,7 +39,7 @@ def create_app(test_config=None):
         @wraps(f)
         def decorated_function(*args, **kwargs):
             if environment != "local" and not google.authorized:
-                return redirect(url_for("google.login"))
+                return redirect(url_for("google.login", _scheme="https"))
             return f(*args, **kwargs)
 
         return decorated_function
