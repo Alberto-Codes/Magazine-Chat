@@ -23,13 +23,14 @@ def create_app(test_config=None):
 
     app.config["GOOGLE_OAUTH_CLIENT_ID"] = os.getenv("GOOGLE_OAUTH_CLIENT_ID")
     app.config["GOOGLE_OAUTH_CLIENT_SECRET"] = os.getenv("GOOGLE_OAUTH_CLIENT_SECRET")
-    app.config['PREFERRED_URL_SCHEME'] = 'https'
+    app.config["PREFERRED_URL_SCHEME"] = "https"
     google_bp = make_google_blueprint(
         scope=[
             "https://www.googleapis.com/auth/userinfo.profile",
             "openid",
             "https://www.googleapis.com/auth/userinfo.email",
-        ]
+        ],
+        redirect_url=redirect(url_for("google.login", _scheme="https")),
     )
     app.register_blueprint(google_bp, url_prefix="/login")
 
