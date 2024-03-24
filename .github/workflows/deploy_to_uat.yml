@@ -35,6 +35,6 @@ jobs:
             --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME }}:${{ steps.extract_tag.outputs.TAG }} \
             --region ${{ env.GCP_REGION }} \
             --platform managed \
-            --set-env-vars=[ENVIRONMENT=UAT,FLASK_SECRET_KEY=${{ secrets.FLASK_SECRET_KEY }}] \
+            --set-env-vars=ENVIRONMENT=UAT,FLASK_SECRET_KEY=${{ secrets.FLASK_SECRET_KEY }} \
             --set-secrets=GOOGLE_OAUTH_CREDENTIALS=UAT_GOOGLE_OAUTH_CREDENTIALS:latest \
             --allow-unauthenticated
