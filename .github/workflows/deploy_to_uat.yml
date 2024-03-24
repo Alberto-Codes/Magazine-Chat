@@ -36,5 +36,5 @@ jobs:
             --region ${{ env.GCP_REGION }} \
             --platform managed \
             --set-env-vars=[ENVIRONMENT=UAT,FLASK_SECRET_KEY=${{ secrets.FLASK_SECRET_KEY }}] \
-            --set-secrets=[GOOGLE_OAUTH_CREDENTIALS=UAT_GOOGLE_OAUTH_CREDENTIALS:1] \
+            --set-secrets=GOOGLE_OAUTH_CREDENTIALS=UAT_GOOGLE_OAUTH_CREDENTIALS:latest \
             --allow-unauthenticated
