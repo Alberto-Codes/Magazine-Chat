@@ -2,12 +2,19 @@ import os
 from functools import wraps
 
 from dotenv import load_dotenv
-from flask import Flask, jsonify, redirect, url_for
+from flask import Flask, jsonify, redirect, request, url_for
 from flask_cors import CORS
 from flask_dance.contrib.google import google, make_google_blueprint
 from flask_restx import Api, Resource
 
 load_dotenv()
+
+
+def make_https_redirect_url():
+    if request:
+        url = url_for("google.login", _external=True)
+        return url.replace("http://", "https://")
+    return None
 
 
 def create_app(test_config=None):
@@ -30,7 +37,7 @@ def create_app(test_config=None):
             "openid",
             "https://www.googleapis.com/auth/userinfo.email",
         ],
-        redirect_url=redirect(url_for("google.login", _scheme="https")),
+        redirect_url=make_https_redirect_url,
     )
     app.register_blueprint(google_bp, url_prefix="/login")
 
