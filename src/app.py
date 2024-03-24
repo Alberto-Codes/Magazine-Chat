@@ -23,6 +23,7 @@ def create_app(test_config=None):
 
     app.config["GOOGLE_OAUTH_CLIENT_ID"] = os.getenv("GOOGLE_OAUTH_CLIENT_ID")
     app.config["GOOGLE_OAUTH_CLIENT_SECRET"] = os.getenv("GOOGLE_OAUTH_CLIENT_SECRET")
+    app.config['PREFERRED_URL_SCHEME'] = 'https'
     google_bp = make_google_blueprint(
         scope=[
             "https://www.googleapis.com/auth/userinfo.profile",
