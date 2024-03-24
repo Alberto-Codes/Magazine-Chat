@@ -70,7 +70,7 @@ def create_app(test_config=None):
     @app.route("/login")
     def login():
         if not google.authorized:
-            return redirect(url_for("google.login"))
+            return redirect(url_for(endpoint="google.login", _scheme="https"))
         resp = google.get("/oauth2/v1/userinfo")
         assert resp.ok, resp.text
         return jsonify({"message": f"Logged in as {resp.json()['email']}."})
