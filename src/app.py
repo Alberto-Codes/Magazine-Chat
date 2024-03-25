@@ -6,12 +6,14 @@ from flask import Flask, jsonify, redirect, url_for
 from flask_cors import CORS
 from flask_dance.contrib.google import google, make_google_blueprint
 from flask_restx import Api, Resource
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 load_dotenv()
 
 
 def create_app(test_config=None):
     app = Flask(__name__)
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
     if test_config:
         app.config.update(test_config)
 
