@@ -1,14 +1,11 @@
 name: Deploy to UAT
-
 on:
   push:
     tags:
       - '*-rc'
-
 env:
   SERVICE_NAME: ${{ vars.SERVICE_NAME_API }}
   GCP_REGION: ${{ vars.GCP_REGION }}
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -16,34 +13,30 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-
       - name: Extract tag name
         id: extract_tag
         run: echo "::set-output name=TAG::${GITHUB_REF#refs/tags/}"
         shell: bash
-
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
-
       - name: Setup gcloud environment
         uses: google-github-actions/setup-gcloud@v2
-
       - name: Configure Docker
         run: gcloud auth configure-docker
-
       - name: Build and push Docker image
         run: |
           docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME }}:${{ steps.extract_tag.outputs.TAG }} .
           docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME }}:${{ steps.extract_tag.outputs.TAG }}
-
       - name: Deploy to Cloud Run (UAT)
         run: |
           gcloud run deploy ${{ env.SERVICE_NAME }} \
             --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME }}:${{ steps.extract_tag.outputs.TAG }} \
             --region ${{ env.GCP_REGION }} \
             --platform managed \
+            --set-env-vars=ENVIRONMENT=UAT,FLASK_SECRET_KEY=${{ secrets.FLASK_SECRET_KEY }} \
+            --set-secrets=GOOGLE_OAUTH_CLIENT_ID=GOOGLE_OAUTH_CLIENT_ID:latest,GOOGLE_OAUTH_CLIENT_SECRET=GOOGLE_OAUTH_CLIENT_SECRET:latest \
             --allow-unauthenticated
             --set-env-vars ENVIRONMENT=UAT,FLASK_SECRET_KEY='${{ secrets.FLASK_SECRET_KEY }}'
             --set-secrets=GOOGLE_OAUTH_CREDENTIALS=UAT_GOOGLE_OAUTH_CREDENTIALS:latest

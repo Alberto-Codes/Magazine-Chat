@@ -11,6 +11,7 @@ flask-dance = "*"
 google-cloud = "*"
 google-cloud-secret-manager = "*"
 python-dotenv = "*"
+gunicorn = "*"
 
 [dev-packages]
 black = "*"
