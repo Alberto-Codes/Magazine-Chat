@@ -12,8 +12,8 @@ load_dotenv()
 
 def make_https_redirect_url():
     if request:
-        url = url_for("google.login", _external=True)
-        return url.replace("http://", "https://")
+        url = url_for("google.login", _external=True, _scheme="https")
+        return url
     return None
 
 
