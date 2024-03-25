@@ -2,21 +2,12 @@ import os
 from functools import wraps
 
 from dotenv import load_dotenv
-from flask import Flask, jsonify, redirect, request, url_for
+from flask import Flask, jsonify, redirect, url_for
 from flask_cors import CORS
 from flask_dance.contrib.google import google, make_google_blueprint
 from flask_restx import Api, Resource
 
 load_dotenv()
-
-
-def make_https_redirect_url():
-    if request:
-        url = url_for("google.login", _external=True)
-        if request.headers.get("X-Forwarded-Proto") == "https":
-            url = url.replace("http://", "https://")
-        return url
-    return None
 
 
 def create_app(test_config=None):
@@ -27,19 +18,14 @@ def create_app(test_config=None):
     app.secret_key = os.getenv("FLASK_SECRET_KEY", "supersecret")
     environment = os.getenv("ENVIRONMENT", "local")
 
-    if environment == "local":
-        os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
-
     app.config["GOOGLE_OAUTH_CLIENT_ID"] = os.getenv("GOOGLE_OAUTH_CLIENT_ID")
     app.config["GOOGLE_OAUTH_CLIENT_SECRET"] = os.getenv("GOOGLE_OAUTH_CLIENT_SECRET")
-    # app.config["PREFERRED_URL_SCHEME"] = "https"
     google_bp = make_google_blueprint(
         scope=[
             "https://www.googleapis.com/auth/userinfo.profile",
             "openid",
             "https://www.googleapis.com/auth/userinfo.email",
-        ],
-        redirect_url=make_https_redirect_url,
+        ]
     )
     app.register_blueprint(google_bp, url_prefix="/login")
 
@@ -49,7 +35,7 @@ def create_app(test_config=None):
         @wraps(f)
         def decorated_function(*args, **kwargs):
             if environment != "local" and not google.authorized:
-                return redirect(url_for("google.login", _scheme="https"))
+                return redirect(url_for("google.login"))
             return f(*args, **kwargs)
 
         return decorated_function
@@ -80,10 +66,7 @@ def create_app(test_config=None):
     @app.route("/login")
     def login():
         if not google.authorized:
-            if request.headers.get("X-Forwarded-Proto") == "https":
-                return redirect(url_for(endpoint="google.login", _scheme="https"))
-            else:
-                return redirect(url_for(endpoint="google.login"))
+            return redirect(url_for("google.login"))
         resp = google.get("/oauth2/v1/userinfo")
         assert resp.ok, resp.text
         return jsonify({"message": f"Logged in as {resp.json()['email']}."})
