@@ -12,7 +12,9 @@ load_dotenv()
 
 def make_https_redirect_url():
     if request:
-        url = url_for("google.login", _external=True, _scheme="https")
+        url = url_for("google.login", _external=True)
+        if request.headers.get("X-Forwarded-Proto") == "https":
+            url = url.replace("http://", "https://")
         return url
     return None
 
@@ -30,7 +32,7 @@ def create_app(test_config=None):
 
     app.config["GOOGLE_OAUTH_CLIENT_ID"] = os.getenv("GOOGLE_OAUTH_CLIENT_ID")
     app.config["GOOGLE_OAUTH_CLIENT_SECRET"] = os.getenv("GOOGLE_OAUTH_CLIENT_SECRET")
-    app.config["PREFERRED_URL_SCHEME"] = "https"
+    # app.config["PREFERRED_URL_SCHEME"] = "https"
     google_bp = make_google_blueprint(
         scope=[
             "https://www.googleapis.com/auth/userinfo.profile",
@@ -78,7 +80,10 @@ def create_app(test_config=None):
     @app.route("/login")
     def login():
         if not google.authorized:
-            return redirect(url_for(endpoint="google.login", _scheme="https"))
+            if request.headers.get("X-Forwarded-Proto") == "https":
+                return redirect(url_for(endpoint="google.login", _scheme="https"))
+            else:
+                return redirect(url_for(endpoint="google.login"))
         resp = google.get("/oauth2/v1/userinfo")
         assert resp.ok, resp.text
         return jsonify({"message": f"Logged in as {resp.json()['email']}."})
