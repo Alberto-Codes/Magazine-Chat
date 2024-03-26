@@ -2,13 +2,17 @@ import os
 from functools import wraps
 
 from dotenv import load_dotenv
-from flask import Flask, jsonify, redirect, url_for
+from flask import Flask, jsonify, redirect, request, url_for
 from flask_cors import CORS
 from flask_dance.contrib.google import google, make_google_blueprint
 from flask_restx import Api, Resource
+from google.cloud import storage
 from werkzeug.middleware.proxy_fix import ProxyFix
+from werkzeug.utils import secure_filename
 
 load_dotenv()
+
+storage_client = storage.Client()
 
 
 def create_app(test_config=None):
@@ -88,6 +92,29 @@ def add_namespaces(api, oauth_required):
         @oauth_required
         def get(self):
             return {"greeting": "Hello, world!"}
+
+    @api_v1.route("/upload")
+    class FileUpload(Resource):
+        @api.doc(
+            responses={200: "OK", 400: "Invalid Argument", 500: "Upload Error"},
+            description="Upload a file to GCP bucket",
+        )
+        @oauth_required
+        def post(self):
+            if "file" not in request.files:
+                return {"message": "No file part in the request"}, 400
+
+            file = request.files["file"]
+            if file.filename == "":
+                return {"message": "No selected file"}, 400
+
+            filename = secure_filename(file.filename)
+            bucket_name = os.getenv("GCP_BUCKET_NAME")
+            bucket = storage_client.bucket(bucket_name)
+            blob = bucket.blob(filename)
+            blob.upload_from_file(file)
+
+            return {"message": f"File {filename} uploaded successfully"}, 200
 
 
 if __name__ == "__main__":
