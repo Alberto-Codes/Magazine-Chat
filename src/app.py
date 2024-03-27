@@ -6,7 +6,9 @@ from flask import Flask, jsonify, redirect, request, url_for
 from flask_cors import CORS
 from flask_dance.contrib.google import google, make_google_blueprint
 from flask_restx import Api, Resource
+from google.auth.transport import requests
 from google.cloud import storage
+from google.oauth2 import id_token
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.utils import secure_filename
 
@@ -36,13 +38,21 @@ def create_app(test_config=None):
     app.register_blueprint(google_bp, url_prefix="/login")
 
     def oauth_required(f):
-        """Decorator to protect routes with OAuth in non-local environments"""
-
         @wraps(f)
         def decorated_function(*args, **kwargs):
-            if environment != "local" and not google.authorized:
-                return redirect(url_for("google.login"))
-            return f(*args, **kwargs)
+            if environment == "local":
+                return f(*args, **kwargs)
+            if "Authorization" in request.headers:
+                token = request.headers["Authorization"].split(" ")[-1]
+                try:
+                    id_info = id_token.verify_oauth2_token(
+                        token, requests.Request(), app.config["GOOGLE_OAUTH_CLIENT_ID"]
+                    )
+                    return f(*args, **kwargs)
+                except ValueError:
+                    return jsonify({"error": "Invalid token"}), 401
+            else:
+                return jsonify({"error": "Token is missing"}), 401
 
         return decorated_function
 
