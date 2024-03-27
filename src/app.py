@@ -49,10 +49,14 @@ def create_app(test_config=None):
                         token, requests.Request(), app.config["GOOGLE_OAUTH_CLIENT_ID"]
                     )
                     return f(*args, **kwargs)
-                except ValueError:
-                    return jsonify({"error": "Invalid token"}), 401
+                except ValueError as e:
+                    error_msg = f"Token validation failed: {str(e)}"
+                    app.logger.error(error_msg)
+                    return jsonify({"error": error_msg}), 401
             else:
-                return jsonify({"error": "Token is missing"}), 401
+                error_msg = "Token is missing"
+                app.logger.error(error_msg)
+                return jsonify({"error": error_msg}), 401
 
         return decorated_function
 
@@ -112,11 +116,15 @@ def add_namespaces(api, oauth_required):
         @oauth_required
         def post(self):
             if "file" not in request.files:
-                return {"message": "No file part in the request"}, 400
+                error_msg = "No file part in the request"
+                app.logger.error(error_msg)
+                return {"message": error_msg}, 400
 
             file = request.files["file"]
             if file.filename == "":
-                return {"message": "No selected file"}, 400
+                error_msg = "No selected file"
+                app.logger.error(error_msg)
+                return {"message": error_msg}, 400
 
             filename = secure_filename(file.filename)
             bucket_name = os.getenv("GCP_BUCKET_NAME")
