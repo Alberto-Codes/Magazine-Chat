@@ -1,6 +1,7 @@
 import os
 from functools import wraps
 
+import requests
 from dotenv import load_dotenv
 from flask import Flask, jsonify, redirect, request, url_for
 from flask_cors import CORS
@@ -85,6 +86,42 @@ def add_namespaces(api):
             blob.upload_from_file(file)
 
             return {"message": f"File {filename} uploaded successfully"}, 200
+
+    @api_v1.route("/import_documents", methods=["POST"])
+    class ImportDocuments(Resource):
+        def post(self):
+            data = request.get_json()
+
+            project_id = os.getenv("GCP_PROJECT_ID")
+            location = "global"
+            data_store_id = data.get("data_store_id")
+            branch_id = 0
+            gcs_uri = f"gs://{ os.getenv('GCP_BUCKET_NAME') }/*"
+
+            if location == "us":
+                url = f"https://us-discoveryengine.googleapis.com/v1alpha/projects/{project_id}/locations/{location}/collections/default_collection/dataStores/{data_store_id}/branches/{branch_id}/documents:import"
+            else:
+                url = f"https://discoveryengine.googleapis.com/v1alpha/projects/{project_id}/locations/{location}/collections/default_collection/dataStores/{data_store_id}/branches/{branch_id}/documents:import"
+            body = {
+                "gcsSource": {"input_uris": [gcs_uri], "data_schema": "content"},
+                "reconciliationMode": "INCREMENTAL",
+            }
+
+            response = requests.post(url, json=body)
+
+            if response.status_code == 200:
+                return jsonify(response.json())
+            else:
+                return (
+                    jsonify(
+                        {
+                            "error": "Request failed",
+                            "status_code": response.status_code,
+                            "message": response.text,
+                        }
+                    ),
+                    response.status_code,
+                )
 
 
 if __name__ == "__main__":
