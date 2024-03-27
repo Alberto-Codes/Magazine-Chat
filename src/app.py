@@ -92,11 +92,20 @@ def create_app(test_config=None):
 
     @app.route("/login")
     def login():
-        if not google.authorized:
+        auth_header = request.headers.get('Authorization')
+        if auth_header:
+            token = auth_header.split(' ')[1]
+            token_info = validate_access_token(token)
+            if token_info is not None:
+                return f"Logged in as {token_info['email']}."
+            else:
+                return "Invalid token", 401
+        elif not google.authorized:
             return redirect(url_for("google.login"))
-        resp = google.get("/oauth2/v1/userinfo")
-        assert resp.ok, resp.text
-        return jsonify({"message": f"Logged in as {resp.json()['email']}."})
+        else:
+            resp = google.get("/oauth2/v1/userinfo")
+            assert resp.ok, resp.text
+            return jsonify({"message": f"Logged in as {resp.json()['email']}."})
 
     return app
 
