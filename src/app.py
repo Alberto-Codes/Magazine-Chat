@@ -3,7 +3,9 @@ from functools import wraps
 
 import requests
 from dotenv import load_dotenv
-from flask import Flask, jsonify, redirect, request, url_for
+from flask import Flask
+from flask import current_app as app
+from flask import jsonify, redirect, request, url_for
 from flask_cors import CORS
 from flask_restx import Api, Resource
 from google.cloud import storage
@@ -72,7 +74,7 @@ def add_namespaces(api):
                 error_msg = "No file part in the request"
                 app.logger.error(error_msg)
                 return {"message": error_msg}, 400
-            
+
             file = request.files["file"]
             if file.filename == "":
                 error_msg = "No selected file"
