@@ -37,6 +37,15 @@ def create_app(test_config=None):
     )
     app.register_blueprint(google_bp, url_prefix="/login")
 
+    def validate_access_token(token):
+        response = requests.get(
+            f"https://www.googleapis.com/oauth2/v1/tokeninfo?access_token={token}"
+        )
+        if response.status_code == 200:
+            return response.json()
+        else:
+            return None
+
     def oauth_required(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
@@ -44,13 +53,11 @@ def create_app(test_config=None):
                 return f(*args, **kwargs)
             if "Authorization" in request.headers:
                 token = request.headers["Authorization"].split(" ")[-1]
-                try:
-                    id_info = id_token.verify_oauth2_token(
-                        token, requests.Request(), app.config["GOOGLE_OAUTH_CLIENT_ID"]
-                    )
+                token_info = validate_access_token(token)
+                if token_info is not None:
                     return f(*args, **kwargs)
-                except ValueError as e:
-                    error_msg = f"Token validation failed: {str(e)}"
+                else:
+                    error_msg = "Token validation failed"
                     app.logger.error(error_msg)
                     return jsonify({"error": error_msg}), 401
             else:
