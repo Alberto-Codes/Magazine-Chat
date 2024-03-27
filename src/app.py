@@ -93,8 +93,8 @@ def add_namespaces(api):
             data = request.get_json()
 
             project_id = os.getenv("GCP_PROJECT_ID")
-            location = "global"
-            data_store_id = data.get("data_store_id")
+            location = data.get("location", "global")
+            data_store_id = os.getenv('GCP_SEARCH_DATASTORE_ID') 
             branch_id = 0
             gcs_uri = f"gs://{ os.getenv('GCP_BUCKET_NAME') }/*"
 
