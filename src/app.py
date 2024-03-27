@@ -72,7 +72,7 @@ def add_namespaces(api):
                 error_msg = "No file part in the request"
                 app.logger.error(error_msg)
                 return {"message": error_msg}, 400
-
+            
             file = request.files["file"]
             if file.filename == "":
                 error_msg = "No selected file"
@@ -87,14 +87,25 @@ def add_namespaces(api):
 
             return {"message": f"File {filename} uploaded successfully"}, 200
 
-    @api_v1.route("/import_documents", methods=["POST"])
+    @api_v1.route("/import_documents")
     class ImportDocuments(Resource):
+        @api.doc(
+            responses={200: "OK", 400: "Invalid Argument", 500: "Import Error"},
+            description="Import documents from GCP bucket",
+        )
         def post(self):
             data = request.get_json()
 
+            if not request.is_json:
+                return {"message": "Missing JSON in request"}, 400
+            if not data:
+                return {"message": "Missing data in request"}, 400
+            if not data.get("location"):
+                return {"message": "Missing location in request"}, 400
+
             project_id = os.getenv("GCP_PROJECT_ID")
             location = data.get("location", "global")
-            data_store_id = os.getenv('GCP_SEARCH_DATASTORE_ID') 
+            data_store_id = os.getenv("GCP_SEARCH_DATASTORE_ID")
             branch_id = 0
             gcs_uri = f"gs://{ os.getenv('GCP_BUCKET_NAME') }/*"
 
@@ -107,21 +118,16 @@ def add_namespaces(api):
                 "reconciliationMode": "INCREMENTAL",
             }
 
-            response = requests.post(url, json=body)
+            response = requests.post(url, json=body, timeout=300)
 
             if response.status_code == 200:
+                app.logger.info("Documents imported successfully")
+                app.logger.info(response.json())
                 return jsonify(response.json())
             else:
-                return (
-                    jsonify(
-                        {
-                            "error": "Request failed",
-                            "status_code": response.status_code,
-                            "message": response.text,
-                        }
-                    ),
-                    response.status_code,
-                )
+                app.logger.error("Error importing documents")
+                app.logger.error(response.json())
+                return jsonify(response.json()), response.status_code
 
 
 if __name__ == "__main__":
