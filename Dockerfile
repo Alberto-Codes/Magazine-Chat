@@ -8,4 +8,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY src/app/ ./app
 COPY src/run.py .
 
-CMD ["gunicorn", "-w", "1", "-b", "0.0.0.0:8080", "--timeout", "200", "--threads", "8", "run:app"]
+CMD ["gunicorn", "-w", "1", "-b", "0.0.0.0:8080", "--timeout", "200", "--threads", "8", "app:create_app()"]
