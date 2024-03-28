@@ -1,20 +1,11 @@
-import json
 import os
 from functools import wraps
 
-import google.auth
-import requests
 from dotenv import load_dotenv
-from flask import Flask
-from flask import current_app as app
-from flask import jsonify, redirect, request, url_for
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_restx import Api, Resource
-from google.auth import compute_engine
-from google.auth.exceptions import DefaultCredentialsError
-from google.auth.transport.requests import Request
 from google.cloud import discoveryengine, storage
-from google.oauth2 import service_account
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.utils import secure_filename
 
@@ -30,7 +21,6 @@ def create_app(test_config=None):
         app.config.update(test_config)
 
     app.secret_key = os.getenv("FLASK_SECRET_KEY", "supersecret")
-    environment = os.getenv("ENVIRONMENT", "local")
 
     CORS(app, resources={r"/api/*": {"origins": "*"}})
 
@@ -63,7 +53,7 @@ def add_namespaces(api):
     @api_v1.route("/greetings")
     class Greetings(Resource):
         @api.doc(
-            responses={200: "OK", 400: "Invalid Argument", 500: "Mapping Key Error"},
+            responses={200: "OK"},
             description="Get a greeting",
         )
         def get(self):
@@ -72,20 +62,16 @@ def add_namespaces(api):
     @api_v1.route("/upload")
     class FileUpload(Resource):
         @api.doc(
-            responses={200: "OK", 400: "Invalid Argument", 500: "Upload Error"},
+            responses={200: "OK", 400: "Invalid Argument"},
             description="Upload a file to GCP bucket",
         )
         def post(self):
             if "file" not in request.files:
-                error_msg = "No file part in the request"
-                app.logger.error(error_msg)
-                return {"message": error_msg}, 400
+                return {"message": "No file part in the request"}, 400
 
             file = request.files["file"]
             if file.filename == "":
-                error_msg = "No selected file"
-                app.logger.error(error_msg)
-                return {"message": error_msg}, 400
+                return {"message": "No selected file"}, 400
 
             filename = secure_filename(file.filename)
             bucket_name = os.getenv("GCP_BUCKET_NAME")
@@ -98,20 +84,17 @@ def add_namespaces(api):
     @api_v1.route("/import_documents")
     class ImportDocuments(Resource):
         @api.doc(
-            responses={200: "OK", 400: "Invalid Argument", 500: "Import Error"},
+            responses={200: "OK", 400: "Invalid Argument"},
             description="Import documents from GCP bucket",
         )
         def post(self):
-            data = request.get_json(
-                force=True
-            )  # Using force=True to avoid needing the Content-Type header
+            data = request.get_json(force=True)
 
             project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
             location = data.get("location", "global")
             data_store_id = os.getenv("GCP_SEARCH_DATASTORE_ID")
-            gcs_uri = f"gs://{ os.getenv('GCP_BUCKET_NAME') }/*"
+            gcs_uri = f"gs://{os.getenv('GCP_BUCKET_NAME')}/*"
 
-            # Initialize the Discovery Engine client
             client = discoveryengine.DocumentServiceClient()
 
             parent = client.branch_path(
@@ -129,9 +112,7 @@ def add_namespaces(api):
                 reconciliation_mode=discoveryengine.ImportDocumentsRequest.ReconciliationMode.INCREMENTAL,
             )
 
-            # Perform the import operation
             operation = client.import_documents(request=request_body)
-            print(f"Waiting for operation to complete: {operation.operation.name}")
             response = operation.result()
 
             return {
