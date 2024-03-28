@@ -128,9 +128,8 @@ def add_namespaces(api):
 
             service_account_key_json = os.environ.get("SERVICE_ACCOUNT_KEY")
             service_account_key = json.loads(service_account_key_json)
-            credentials = service_account.Credentials.from_service_account_info(
-                service_account_key
-            )
+            scopes = ['https://www.googleapis.com/auth/cloud-platform']
+            credentials = service_account.Credentials.from_service_account_info(service_account_key, scopes=scopes)
             auth_req = Request()
             token = credentials.refresh(auth_req).token
             headers = {
