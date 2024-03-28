@@ -127,10 +127,37 @@ def add_namespaces(api):
             }
 
             service_account_key_json = os.environ.get("SERVICE_ACCOUNT_KEY")
-            service_account_key = json.loads(service_account_key_json)
-            scopes = ['https://www.googleapis.com/auth/cloud-platform']
-            credentials = service_account.Credentials.from_service_account_info(service_account_key, scopes=scopes)
+            if not service_account_key_json:
+                app.logger.error("SERVICE_ACCOUNT_KEY environment variable is not set")
+                return {"message": "Service account key not found"}, 500
+
+            try:
+                service_account_key = json.loads(service_account_key_json)
+            except json.JSONDecodeError as e:
+                app.logger.error("Error parsing service account key JSON: %s", e)
+                return {"message": "Invalid service account key JSON"}, 500
+
+            app.logger.info("Service account key loaded: %s", service_account_key)
+
+            scopes = ["https://www.googleapis.com/auth/cloud-platform"]
+            try:
+                credentials = service_account.Credentials.from_service_account_info(
+                    service_account_key, scopes=scopes
+                )
+            except Exception as e:
+                app.logger.error("Error creating credentials: %s", e)
+                return {"message": "Error creating credentials"}, 500
+
+            if credentials is None:
+                app.logger.error("Credentials object is None")
+                return {"message": "Failed to create credentials"}, 500
+
             auth_req = Request()
+            try:
+                token = credentials.refresh(auth_req).token
+            except Exception as e:
+                app.logger.error("Error refreshing credentials: %s", e)
+                return {"message": "Error refreshing credentials"}, 500
             try:
                 token = credentials.refresh(auth_req).token
             except Exception as e:
