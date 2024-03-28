@@ -163,11 +163,32 @@ def add_namespaces(api):
             except Exception as e:
                 app.logger.error("Error refreshing credentials: %s", e)
                 return {"message": "Error refreshing credentials"}, 500
+            if not token:
+                app.logger.error("Token is None")
+                return {"message": "Failed to create token"}, 500
+
+            app.logger.info("Token: %s", token)
             headers = {
                 "Authorization": "Bearer {}".format(token),
                 "Content-Type": "application/json",
             }
-            response = requests.post(url, headers=headers, json=body, timeout=300)
+            if not url:
+                app.logger.error("URL is None")
+                return {"message": "Failed to create URL"}, 500
+            if not headers:
+                app.logger.error("Headers are None")
+                return {"message": "Failed to create headers"}, 500
+            if not body:
+                app.logger.error("Body is None")
+                return {"message": "Failed to create body"}, 500
+            try:
+                response = requests.post(url, headers=headers, json=body, timeout=300)
+            except requests.exceptions.RequestException as e: 
+                app.logger.error("Error importing documents: %s", e)
+                return {"message": "Error importing documents"}, 500 
+            if not response:
+                app.logger.error("Response is None")
+                return {"message": "Failed to get response"}, 500
 
             if response.status_code == 200:
                 app.logger.info("Documents imported successfully")
