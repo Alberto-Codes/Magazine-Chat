@@ -121,83 +121,61 @@ def add_namespaces(api):
                 url = f"https://us-discoveryengine.googleapis.com/v1alpha/projects/{project_id}/locations/{location}/collections/default_collection/dataStores/{data_store_id}/branches/{branch_id}/documents:import"
             else:
                 url = f"https://discoveryengine.googleapis.com/v1alpha/projects/{project_id}/locations/{location}/collections/default_collection/dataStores/{data_store_id}/branches/{branch_id}/documents:import"
+
             body = {
                 "gcsSource": {"input_uris": [gcs_uri], "data_schema": "content"},
                 "reconciliationMode": "INCREMENTAL",
             }
 
-            service_account_key_json = os.environ.get("SERVICE_ACCOUNT_KEY")
-            if not service_account_key_json:
-                app.logger.error("SERVICE_ACCOUNT_KEY environment variable is not set")
-                return {"message": "Service account key not found"}, 500
-
             try:
-                service_account_key = json.loads(service_account_key_json)
-            except json.JSONDecodeError as e:
-                app.logger.error("Error parsing service account key JSON: %s", e)
-                return {"message": "Invalid service account key JSON"}, 500
+                service_account_info = get_service_account_info()
+            except ValueError as e:
+                app.logger.error("Error retrieving service account info: %s", e)
+                return {"message": "Invalid service account info"}, 500
 
-            app.logger.info("Service account key loaded: %s", service_account_key)
-
-            scopes = ["https://www.googleapis.com/auth/cloud-platform"]
             try:
                 credentials = service_account.Credentials.from_service_account_info(
-                    service_account_key, scopes=scopes
+                    service_account_info
+                )
+                credentials = credentials.with_scopes(
+                    ["https://www.googleapis.com/auth/cloud-platform"]
                 )
             except Exception as e:
                 app.logger.error("Error creating credentials: %s", e)
                 return {"message": "Error creating credentials"}, 500
 
-            if credentials is None:
-                app.logger.error("Credentials object is None")
-                return {"message": "Failed to create credentials"}, 500
-
-            auth_req = Request()
             try:
-                token = credentials.refresh(auth_req).token
+                token = credentials.token
             except Exception as e:
-                app.logger.error("Error refreshing credentials: %s", e)
-                return {"message": "Error refreshing credentials"}, 500
-            try:
-                token = credentials.refresh(auth_req).token
-            except Exception as e:
-                app.logger.error("Error refreshing credentials: %s", e)
-                return {"message": "Error refreshing credentials"}, 500
-            if not token:
-                app.logger.error("Token is None")
-                return {"message": "Failed to create token"}, 500
+                app.logger.error("Error retrieving token: %s", e)
+                return {"message": "Error retrieving token"}, 500
 
-            app.logger.info("Token: %s", token)
             headers = {
-                "Authorization": "Bearer {}".format(token),
+                "Authorization": f"Bearer {token}",
                 "Content-Type": "application/json",
             }
-            if not url:
-                app.logger.error("URL is None")
-                return {"message": "Failed to create URL"}, 500
-            if not headers:
-                app.logger.error("Headers are None")
-                return {"message": "Failed to create headers"}, 500
-            if not body:
-                app.logger.error("Body is None")
-                return {"message": "Failed to create body"}, 500
+
             try:
                 response = requests.post(url, headers=headers, json=body, timeout=300)
-            except requests.exceptions.RequestException as e: 
+                response.raise_for_status()
+            except requests.exceptions.RequestException as e:
                 app.logger.error("Error importing documents: %s", e)
-                return {"message": "Error importing documents"}, 500 
-            if not response:
-                app.logger.error("Response is None")
-                return {"message": "Failed to get response"}, 500
+                return {"message": "Error importing documents"}, 500
 
-            if response.status_code == 200:
-                app.logger.info("Documents imported successfully")
-                app.logger.info(response.json())
-                return response.json()
-            else:
-                app.logger.error("Error importing documents")
-                app.logger.error(response.json())
-                return response.json(), response.status_code
+            app.logger.info("Documents imported successfully")
+            return response.json(), response.status_code
+
+    def get_service_account_info():
+        service_account_key_json = os.environ.get("SERVICE_ACCOUNT_KEY")
+        if not service_account_key_json:
+            raise ValueError("SERVICE_ACCOUNT_KEY environment variable is not set")
+
+        try:
+            service_account_info = json.loads(service_account_key_json)
+        except json.JSONDecodeError as e:
+            raise ValueError("Invalid service account key JSON") from e
+
+        return service_account_info
 
 
 if __name__ == "__main__":
