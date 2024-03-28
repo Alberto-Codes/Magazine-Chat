@@ -1,0 +1,20 @@
+from flask import request
+from flask_restx import Resource
+from werkzeug.utils import secure_filename
+
+from ..utils.gcp_utils import upload_file_to_bucket
+
+class FileUpload(Resource):
+    def post(self):
+        if "file" not in request.files:
+            return {"message": "No file part in the request"}, 400
+
+        file = request.files["file"]
+
+        if file.filename == "":
+            return {"message": "No selected file"}, 400
+
+        filename = secure_filename(file.filename)
+        upload_file_to_bucket(file, filename)
+
+        return {"message": f"File {filename} uploaded successfully"}, 200

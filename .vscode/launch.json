@@ -5,15 +5,20 @@
             "name": "Flask",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/src/app.py",
-            "args": [],
+            "module": "flask",
             "env": {
-                "FLASK_APP": "src/app.py",
+                "FLASK_APP": "run.py",
                 "FLASK_ENV": "development",
                 "FLASK_DEBUG": "1"
             },
+            "args": [
+                "run",
+                "--no-debugger",
+                "--no-reload"
+            ],
             "jinja": true,
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/src"
         }
     ]
 }
