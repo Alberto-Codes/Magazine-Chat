@@ -35,7 +35,7 @@ jobs:
             --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME }}:${{ steps.extract_tag.outputs.TAG }} \
             --region ${{ env.GCP_REGION }} \
             --platform managed \
-            --set-env-vars=ENVIRONMENT=UAT,FLASK_SECRET_KEY=${{ secrets.FLASK_SECRET_KEY }},GCP_BUCKET_NAME=${{ secrets.GCP_BUCKET_NAME }},GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }},GCP_SEARCH_DATASTORE_ID=${{ secrets.GCP_SEARCH_DATASTORE_ID }} \
+            --set-env-vars=ENVIRONMENT=UAT,FLASK_SECRET_KEY=${{ secrets.FLASK_SECRET_KEY }},GCP_BUCKET_NAME=${{ secrets.GCP_BUCKET_NAME }},GOOGLE_CLOUD_PROJECT=${{ secrets.GCP_PROJECT_ID }},GCP_SEARCH_DATASTORE_ID=${{ secrets.GCP_SEARCH_DATASTORE_ID }} \
             --set-secrets=GOOGLE_OAUTH_CLIENT_ID=GOOGLE_OAUTH_CLIENT_ID:latest,GOOGLE_OAUTH_CLIENT_SECRET=GOOGLE_OAUTH_CLIENT_SECRET:latest,SERVICE_ACCOUNT_KEY=magazine-chat-service-account-secret:latest \
             --allow-unauthenticated \
             --memory 2Gi
