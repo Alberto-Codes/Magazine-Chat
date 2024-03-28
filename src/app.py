@@ -1,3 +1,4 @@
+import json
 import os
 from functools import wraps
 
@@ -125,20 +126,17 @@ def add_namespaces(api):
                 "reconciliationMode": "INCREMENTAL",
             }
 
-            service_account_key = os.environ.get("SERVICE_ACCOUNT_KEY")
-
+            service_account_key_json = os.environ.get("SERVICE_ACCOUNT_KEY")
+            service_account_key = json.loads(service_account_key_json)
             credentials = service_account.Credentials.from_service_account_info(
                 service_account_key
             )
-
             auth_req = Request()
             token = credentials.refresh(auth_req).token
-
             headers = {
                 "Authorization": "Bearer {}".format(token),
                 "Content-Type": "application/json",
             }
-
             response = requests.post(url, headers=headers, json=body, timeout=300)
 
             if response.status_code == 200:
