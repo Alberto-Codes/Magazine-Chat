@@ -1,6 +1,7 @@
 import os
 from functools import wraps
 
+import google.auth
 import requests
 from dotenv import load_dotenv
 from flask import Flask
@@ -8,6 +9,9 @@ from flask import current_app as app
 from flask import jsonify, redirect, request, url_for
 from flask_cors import CORS
 from flask_restx import Api, Resource
+from google.auth import compute_engine
+from google.auth.exceptions import DefaultCredentialsError
+from google.auth.transport.requests import Request
 from google.cloud import storage
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.utils import secure_filename
@@ -120,7 +124,20 @@ def add_namespaces(api):
                 "reconciliationMode": "INCREMENTAL",
             }
 
-            response = requests.post(url, json=body, timeout=300)
+            try:
+                credentials, project = google.auth.default()
+            except DefaultCredentialsError:
+                credentials = compute_engine.Credentials()
+
+            auth_req = Request()
+            token = credentials.refresh(auth_req).token
+
+            headers = {
+                "Authorization": "Bearer {}".format(token),
+                "Content-Type": "application/json",
+            }
+
+            response = requests.post(url, headers=headers, json=body, timeout=300)
 
             if response.status_code == 200:
                 app.logger.info("Documents imported successfully")
