@@ -13,7 +13,7 @@ from flask_restx import Api, Resource
 from google.auth import compute_engine
 from google.auth.exceptions import DefaultCredentialsError
 from google.auth.transport.requests import Request
-from google.cloud import storage
+from google.cloud import discoveryengine, storage
 from google.oauth2 import service_account
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.utils import secure_filename
@@ -102,80 +102,41 @@ def add_namespaces(api):
             description="Import documents from GCP bucket",
         )
         def post(self):
-            data = request.get_json()
+            data = request.get_json(
+                force=True
+            )  # Using force=True to avoid needing the Content-Type header
 
-            if not request.is_json:
-                return {"message": "Missing JSON in request"}, 400
-            if not data:
-                return {"message": "Missing data in request"}, 400
-            if not data.get("location"):
-                return {"message": "Missing location in request"}, 400
-
-            project_id = os.getenv("GCP_PROJECT_ID")
+            project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
             location = data.get("location", "global")
             data_store_id = os.getenv("GCP_SEARCH_DATASTORE_ID")
-            branch_id = 0
             gcs_uri = f"gs://{ os.getenv('GCP_BUCKET_NAME') }/*"
 
-            if location == "us":
-                url = f"https://us-discoveryengine.googleapis.com/v1beta/projects/{project_id}/locations/{location}/collections/default_collection/dataStores/{data_store_id}/branches/{branch_id}/documents:import"
-            else:
-                url = f"https://discoveryengine.googleapis.com/v1beta/projects/{project_id}/locations/{location}/collections/default_collection/dataStores/{data_store_id}/branches/{branch_id}/documents:import"
+            # Initialize the Discovery Engine client
+            client = discoveryengine.DocumentServiceClient()
 
-            body = {
-                "gcsSource": {"input_uris": [gcs_uri], "data_schema": "content"},
-                "reconciliationMode": "INCREMENTAL",
-            }
+            parent = client.branch_path(
+                project=project_id,
+                location=location,
+                data_store=data_store_id,
+                branch="default_branch",
+            )
 
-            try:
-                service_account_info = get_service_account_info()
-            except ValueError as e:
-                app.logger.error("Error retrieving service account info: %s", e)
-                return {"message": "Invalid service account info"}, 500
+            request_body = discoveryengine.ImportDocumentsRequest(
+                parent=parent,
+                gcs_source=discoveryengine.GcsSource(
+                    input_uris=[gcs_uri], data_schema="content"
+                ),
+                reconciliation_mode=discoveryengine.ImportDocumentsRequest.ReconciliationMode.INCREMENTAL,
+            )
 
-            try:
-                credentials = service_account.Credentials.from_service_account_info(
-                    service_account_info
-                )
-                credentials = credentials.with_scopes(
-                    ["https://www.googleapis.com/auth/cloud-platform"]
-                )
-            except Exception as e:
-                app.logger.error("Error creating credentials: %s", e)
-                return {"message": "Error creating credentials"}, 500
+            # Perform the import operation
+            operation = client.import_documents(request=request_body)
+            print(f"Waiting for operation to complete: {operation.operation.name}")
+            response = operation.result()
 
-            try:
-                token = credentials.token
-            except Exception as e:
-                app.logger.error("Error retrieving token: %s", e)
-                return {"message": "Error retrieving token"}, 500
-
-            headers = {
-                "Authorization": f"Bearer {token}",
-                "Content-Type": "application/json",
-            }
-
-            try:
-                response = requests.post(url, headers=headers, json=body, timeout=300)
-                response.raise_for_status()
-            except requests.exceptions.RequestException as e:
-                app.logger.error("Error importing documents: %s", e)
-                return {"message": "Error importing documents"}, 500
-
-            app.logger.info("Documents imported successfully")
-            return response.json(), response.status_code
-
-    def get_service_account_info():
-        service_account_key_json = os.environ.get("SERVICE_ACCOUNT_KEY")
-        if not service_account_key_json:
-            raise ValueError("SERVICE_ACCOUNT_KEY environment variable is not set")
-
-        try:
-            service_account_info = json.loads(service_account_key_json)
-        except json.JSONDecodeError as e:
-            raise ValueError("Invalid service account key JSON") from e
-
-        return service_account_info
+            return {
+                "message": f"Import operation {operation.operation.name} completed successfully"
+            }, 200
 
 
 if __name__ == "__main__":
