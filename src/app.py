@@ -125,11 +125,11 @@ def add_namespaces(api):
             if response.status_code == 200:
                 app.logger.info("Documents imported successfully")
                 app.logger.info(response.json())
-                return jsonify(response.json())
+                return response.json()
             else:
                 app.logger.error("Error importing documents")
                 app.logger.error(response.json())
-                return jsonify(response.json()), response.status_code
+                return response.json(), response.status_code
 
 
 if __name__ == "__main__":
