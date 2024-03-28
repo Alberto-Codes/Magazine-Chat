@@ -10,6 +10,7 @@ flask-restx = "*"
 google-cloud-storage = "*"
 google-cloud-discoveryengine = "*"
 python-dotenv = "*"
+gunicorn = "*"
 
 [dev-packages]
 black = "*"
