@@ -131,7 +131,11 @@ def add_namespaces(api):
             scopes = ['https://www.googleapis.com/auth/cloud-platform']
             credentials = service_account.Credentials.from_service_account_info(service_account_key, scopes=scopes)
             auth_req = Request()
-            token = credentials.refresh(auth_req).token
+            try:
+                token = credentials.refresh(auth_req).token
+            except Exception as e:
+                app.logger.error("Error refreshing credentials: %s", e)
+                return {"message": "Error refreshing credentials"}, 500
             headers = {
                 "Authorization": "Bearer {}".format(token),
                 "Content-Type": "application/json",
