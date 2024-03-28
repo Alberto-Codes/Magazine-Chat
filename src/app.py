@@ -13,6 +13,7 @@ from google.auth import compute_engine
 from google.auth.exceptions import DefaultCredentialsError
 from google.auth.transport.requests import Request
 from google.cloud import storage
+from google.oauth2 import service_account
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.utils import secure_filename
 
@@ -124,10 +125,11 @@ def add_namespaces(api):
                 "reconciliationMode": "INCREMENTAL",
             }
 
-            try:
-                credentials, project = google.auth.default()
-            except DefaultCredentialsError:
-                credentials = compute_engine.Credentials()
+            service_account_key = os.environ.get("SERVICE_ACCOUNT_KEY")
+
+            credentials = service_account.Credentials.from_service_account_info(
+                service_account_key
+            )
 
             auth_req = Request()
             token = credentials.refresh(auth_req).token
