@@ -118,9 +118,9 @@ def add_namespaces(api):
             gcs_uri = f"gs://{ os.getenv('GCP_BUCKET_NAME') }/*"
 
             if location == "us":
-                url = f"https://us-discoveryengine.googleapis.com/v1alpha/projects/{project_id}/locations/{location}/collections/default_collection/dataStores/{data_store_id}/branches/{branch_id}/documents:import"
+                url = f"https://us-discoveryengine.googleapis.com/v1beta/projects/{project_id}/locations/{location}/collections/default_collection/dataStores/{data_store_id}/branches/{branch_id}/documents:import"
             else:
-                url = f"https://discoveryengine.googleapis.com/v1alpha/projects/{project_id}/locations/{location}/collections/default_collection/dataStores/{data_store_id}/branches/{branch_id}/documents:import"
+                url = f"https://discoveryengine.googleapis.com/v1beta/projects/{project_id}/locations/{location}/collections/default_collection/dataStores/{data_store_id}/branches/{branch_id}/documents:import"
 
             body = {
                 "gcsSource": {"input_uris": [gcs_uri], "data_schema": "content"},
