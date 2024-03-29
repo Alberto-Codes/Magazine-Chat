@@ -1,9 +1,9 @@
 from flask_restx import Namespace
 
-from .greetings import Greetings
-from .file_upload import FileUpload
-from .import_documents import ImportDocuments
 from .ai_search import AiSearch
+from .file_upload import FileUpload
+from .greetings import Greetings
+from .import_documents import ImportDocuments
 
 api_v1 = Namespace("v1", description="API Version 1")
 api_v1.add_resource(Greetings, "/greetings")

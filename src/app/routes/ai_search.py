@@ -1,10 +1,13 @@
 from typing import List
-from flask import request, jsonify
+
+from flask import jsonify, request
 from flask_restx import Resource
 from google.api_core.client_options import ClientOptions
 from google.cloud import discoveryengine
 from google.cloud import discoveryengine_v1 as discoveryengine
+
 from ..config import Config
+
 
 class AiSearch(Resource):
     def post(self):
@@ -53,26 +56,20 @@ class AiSearch(Resource):
             ),
         )
 
-        search_pager = client.search(ai_request)
+        search_results = client.search(ai_request)
 
-        results = []
-        for search_result in search_pager:
-            derived_struct_data = search_result.document.derived_struct_data
-            snippets = []
+        result = {
+            "Answer": search_results.summary.summary_text,
+            "References": [
+                {
+                    "Title": item.document.derived_struct_data["title"],
+                    "Document": item.document.derived_struct_data["link"].replace(
+                        "gs://", "https://storage.cloud.google.com/"
+                    ),
+                }
+                for item in search_results
+            ],
+            "Status": "Success",
+        }
 
-            if derived_struct_data:
-                snippet_field = derived_struct_data.get("snippets")
-                if snippet_field:
-                    for snippet_value in snippet_field:
-                        snippet = snippet_value.get("snippet")
-                        if snippet:
-                            snippets.append(snippet)
-
-            result = {
-                "answer" : search_pager.summary.summary_text,
-                "id": search_result.id,
-                "snippets": snippets,
-            }
-            results.append(result)
-
-        return jsonify(results)
+        return result

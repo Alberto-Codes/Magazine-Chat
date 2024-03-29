@@ -1,7 +1,9 @@
 import os
+
 from dotenv import load_dotenv
 
 load_dotenv()
+
 
 class Config:
     FLASK_SECRET_KEY = os.getenv("FLASK_SECRET_KEY", "supersecret")

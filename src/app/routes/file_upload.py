@@ -4,6 +4,7 @@ from werkzeug.utils import secure_filename
 
 from ..utils.gcp_utils import upload_file_to_bucket
 
+
 class FileUpload(Resource):
     def post(self):
         if "file" not in request.files:
