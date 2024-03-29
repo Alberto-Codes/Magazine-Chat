@@ -4,6 +4,7 @@ from google.cloud import discoveryengine
 
 from ..config import Config
 
+
 class ImportDocuments(Resource):
     def post(self):
         data = request.get_json(force=True)
@@ -22,8 +23,7 @@ class ImportDocuments(Resource):
         request_body = discoveryengine.ImportDocumentsRequest(
             parent=parent,
             gcs_source=discoveryengine.GcsSource(
-                input_uris=[gcs_uri],
-                data_schema="content"
+                input_uris=[gcs_uri], data_schema="content"
             ),
             reconciliation_mode=discoveryengine.ImportDocumentsRequest.ReconciliationMode.INCREMENTAL,
         )

@@ -1,10 +1,12 @@
 import os
+
 from flask import Flask, jsonify
 from flask_cors import CORS
 from flask_restx import Api
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from .routes import api_v1
+
 
 def create_app(test_config=None):
     app = Flask(__name__)

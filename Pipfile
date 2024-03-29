@@ -11,6 +11,7 @@ google-cloud-storage = "*"
 google-cloud-discoveryengine = "*"
 python-dotenv = "*"
 gunicorn = "*"
+google-cloud = "*"
 
 [dev-packages]
 black = "*"
