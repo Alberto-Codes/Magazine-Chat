@@ -26,15 +26,23 @@ jobs:
       - name: Configure Docker
         run: gcloud auth configure-docker
       - name: Build and push Docker image
-        run: |
-          docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME }}:${{ steps.extract_tag.outputs.TAG }} .
-          docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME }}:${{ steps.extract_tag.outputs.TAG }}
+        run: >
+          docker build 
+          -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME }}:${{ steps.extract_tag.outputs.TAG }} 
+          .
+          && docker push 
+          gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME }}:${{ steps.extract_tag.outputs.TAG }}
       - name: Deploy to Cloud Run (UAT)
-        run: |
-          gcloud run deploy ${{ env.SERVICE_NAME }} \
-            --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME }}:${{ steps.extract_tag.outputs.TAG }} \
-            --region ${{ env.GCP_REGION }} \
-            --platform managed \
-            --set-env-vars=ENVIRONMENT=UAT,FLASK_SECRET_KEY=${{ secrets.FLASK_SECRET_KEY }},GCP_BUCKET_NAME=${{ secrets.GCP_BUCKET_NAME }},GOOGLE_CLOUD_PROJECT=${{ secrets.GCP_PROJECT_ID }},GCP_SEARCH_DATASTORE_ID=${{ secrets.GCP_SEARCH_DATASTORE_ID }} \
-            --allow-unauthenticated \
-            --memory 2Gi
+        run: >
+          gcloud run deploy ${{ env.SERVICE_NAME }} 
+          --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME }}:${{ steps.extract_tag.outputs.TAG }} 
+          --region ${{ env.GCP_REGION }} 
+          --platform managed 
+          --set-env-vars=ENVIRONMENT=UAT,
+          FLASK_SECRET_KEY=${{ secrets.FLASK_SECRET_KEY }},
+          GCP_BUCKET_NAME=${{ secrets.GCP_BUCKET_NAME }},
+          GOOGLE_CLOUD_PROJECT=${{ secrets.GCP_PROJECT_ID }},
+          GCP_SEARCH_DATASTORE_ID=${{ secrets.GCP_SEARCH_DATASTORE_ID }},
+          AI_SEARCH_ENGINE_ID=${{ secrets.AI_SEARCH_ENGINE_ID }} 
+          --allow-unauthenticated 
+          --memory 2Gi
