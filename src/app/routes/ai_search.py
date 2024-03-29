@@ -1,3 +1,5 @@
+import csv
+
 from flask import jsonify, request
 from flask_restx import Resource
 from google.api_core.client_options import ClientOptions
@@ -8,16 +10,24 @@ from ..config import Config
 
 
 class AiSearch(Resource):
-    def post(self):
+    def post(self, engine_id=None, preamble=None, search_query=None):
         try:
-            data = request.get_json(force=True)
+            data = request.get_json(force=True)  # Define data at the beginning
+            if engine_id is None:
+                engine_id = data.get("engine_id")
+            if preamble is None:
+                preamble = data.get("preamble", "")
+            if search_query is None:
+                search_query = data.get("search_query")
+
             project_id = Config.GOOGLE_CLOUD_PROJECT
             location = data.get("location", "global")
-            engine_id = data.get("engine_id")
-            search_query = data.get("search_query")
+            engine_id = engine_id
+            search_query = search_query
+            preamble = preamble
 
             client = self._create_search_client(location)
-            content_search_spec = self._create_content_search_spec()
+            content_search_spec = self._create_content_search_spec(preamble=preamble)
             ai_request = self._create_search_request(
                 project_id, location, engine_id, search_query, content_search_spec
             )
@@ -43,7 +53,7 @@ class AiSearch(Resource):
         return discoveryengine.SearchServiceClient(client_options=client_options)
 
     @staticmethod
-    def _create_content_search_spec():
+    def _create_content_search_spec(preamble):
         return discoveryengine.SearchRequest.ContentSearchSpec(
             snippet_spec=discoveryengine.SearchRequest.ContentSearchSpec.SnippetSpec(
                 return_snippet=True
@@ -54,7 +64,7 @@ class AiSearch(Resource):
                 ignore_adversarial_query=False,
                 ignore_non_summary_seeking_query=True,
                 model_prompt_spec=discoveryengine.SearchRequest.ContentSearchSpec.SummarySpec.ModelPromptSpec(
-                    preamble="YOUR_CUSTOM_PROMPT"
+                    preamble=preamble,
                 ),
                 model_spec=discoveryengine.SearchRequest.ContentSearchSpec.SummarySpec.ModelSpec(
                     version="preview",
@@ -96,3 +106,42 @@ class AiSearch(Resource):
             ],
             "Status": "Success",
         }
+
+
+class BatchAiSearch(Resource):
+    def post(self):
+        data = request.get_json(force=True)
+        argument = data.get("argument")
+        predefined_queries = self.get_predefined_queries(argument)
+        engine_id = Config.AI_SEARCH_ENGINE_ID
+
+        ai_search = AiSearch()
+        results = []
+
+        for category, subcategory, preamble, query in predefined_queries:
+            result = ai_search.post(
+                engine_id=engine_id, preamble=preamble, search_query=query
+            )
+            results.append(
+                {
+                    "category": category,
+                    "subcategory": subcategory,
+                    "preamble": preamble,
+                    "search_query": query,
+                    "response": result,
+                }
+            )
+
+        return {"original_input": argument, "results": results}
+
+    @staticmethod
+    def get_predefined_queries(argument):
+        matched_queries = []
+        with open("data/predefined_queries.csv", mode="r") as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                query = row["query"].format(argument)
+                matched_queries.append(
+                    (row["category"], row["subcategory"], row["preamble"], query)
+                )
+        return matched_queries

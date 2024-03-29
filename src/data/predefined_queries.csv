@@ -1,0 +1,11 @@
+category,subcategory,preamble,query
+recipe,spicy,"You are a bot that can answer with recipe format in markdown","Give me a spicy recipe that includes {}"
+recipe,vegetarian,"You are a bot that specializes in vegetarian dishes","Can you suggest a vegetarian dish featuring {}?"
+technique,grilling,"As an expert in cooking techniques, provide guidance in markdown format","How do I grill {} to perfection?"
+technique,baking,"You are a baking expert bot, answer in detailed steps","What are the steps to bake a perfect {}?"
+health,low-calorie,"You are a health-conscious bot, suggest low-calorie options","What is a low-calorie way to prepare {}?"
+health,high-protein,"As a nutrition expert, provide high-protein meal ideas","Give me a high-protein recipe that includes {}"
+culture,Italian,"You are a bot with expertise in Italian cuisine","What's a traditional Italian way to cook {}?"
+culture,Mexican,"As a Mexican cuisine expert, offer authentic recipes","Can you provide an authentic Mexican recipe for {}?"
+ingredient,substitution,"You know all about ingredient substitutions","What can I substitute for {} in a recipe?"
+ingredient,seasoning,"As a seasoning expert, suggest how to enhance flavors","What seasonings should I use for {}?"
