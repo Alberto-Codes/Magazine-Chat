@@ -51,13 +51,13 @@ class AiSearch(Resource):
             summary_spec=discoveryengine.SearchRequest.ContentSearchSpec.SummarySpec(
                 summary_result_count=5,
                 include_citations=True,
-                ignore_adversarial_query=True,
+                ignore_adversarial_query=False,
                 ignore_non_summary_seeking_query=True,
                 model_prompt_spec=discoveryengine.SearchRequest.ContentSearchSpec.SummarySpec.ModelPromptSpec(
                     preamble="YOUR_CUSTOM_PROMPT"
                 ),
                 model_spec=discoveryengine.SearchRequest.ContentSearchSpec.SummarySpec.ModelSpec(
-                    version="stable",
+                    version="preview",
                 ),
             ),
         )
