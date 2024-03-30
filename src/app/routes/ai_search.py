@@ -1,12 +1,29 @@
 import csv
+from io import BytesIO
 
-from flask import jsonify, request
+from flask import Blueprint, jsonify, request, send_file
 from flask_restx import Resource
 from google.api_core.client_options import ClientOptions
 from google.cloud import discoveryengine
 from google.cloud import discoveryengine_v1 as discoveryengine
 
 from ..config import Config
+from ..utils.pdf_generator import generate_pdf
+
+
+class PdfGenerator(Resource):
+    def post(self):
+        data = request.get_json(force=True)
+        argument = data.get("argument")
+        batchai_search = BatchAiSearch()
+        batch_results = batchai_search.post(argument=argument)
+        pdf_content = generate_pdf(batch_results)
+        return send_file(
+            BytesIO(pdf_content),
+            mimetype="application/pdf",
+            as_attachment=True,
+            download_name=f"{argument}_recipes.pdf",
+        )
 
 
 class AiSearch(Resource):
@@ -109,7 +126,7 @@ class AiSearch(Resource):
 
 
 class BatchAiSearch(Resource):
-    def post(self):
+    def post(self, argument=None):
         data = request.get_json(force=True)
         argument = data.get("argument")
         predefined_queries = self.get_predefined_queries(argument)
