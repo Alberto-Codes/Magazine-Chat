@@ -12,6 +12,8 @@ google-cloud-discoveryengine = "*"
 python-dotenv = "*"
 gunicorn = "*"
 google-cloud = "*"
+reportlab = "*"
+markdown = "*"
 
 [dev-packages]
 black = "*"
