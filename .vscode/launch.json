@@ -6,6 +6,7 @@
             "type": "python",
             "request": "launch",
             "module": "flask",
+            "envFile": "${workspaceFolder}/src/api/.env",
             "env": {
                 "FLASK_APP": "run.py",
                 "FLASK_ENV": "development",
@@ -18,7 +19,25 @@
             ],
             "jinja": true,
             "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}/src"
+            "cwd": "${workspaceFolder}/src/api"
+        },
+        { "name": "Streamlit",
+            "type": "python",
+            "request": "launch",
+            "module": "streamlit",
+            "envFile": "${workspaceFolder}/src/web/.env",
+            "env": {
+                "STREAMLIT_SERVER_PORT": "8501",
+                "STREAMLIT_SERVER_HEADLESS": "true",
+                "STREAMLIT_SERVER_ENABLECORS": "false"
+            },
+            "args": [
+                "run",
+                "app.py"
+            ],
+            "jinja": true,
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/src/web"
         }
     ]
 }

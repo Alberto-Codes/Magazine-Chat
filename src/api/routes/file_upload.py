@@ -1,4 +1,4 @@
-from flask import request
+from flask import jsonify, request
 from flask_restx import Resource
 from werkzeug.utils import secure_filename
 
@@ -16,6 +16,6 @@ class FileUpload(Resource):
             return {"message": "No selected file"}, 400
 
         filename = secure_filename(file.filename)
-        upload_file_to_bucket(file, filename)
+        result = upload_file_to_bucket(file, filename)
 
-        return {"message": f"File {filename} uploaded successfully"}, 200
+        return {"results": result, "status": 200}
