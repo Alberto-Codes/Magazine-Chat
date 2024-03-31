@@ -1,6 +1,10 @@
+import os
 import streamlit as st
 import requests
 import base64
+
+# Get API_SERVICE_URL from environment variables
+api_service_url = os.getenv("API_SERVICE_URL")
 
 # User inputs
 argument = st.text_input("Enter food ingredient")
@@ -8,17 +12,17 @@ argument = st.text_input("Enter food ingredient")
 # Button to start the process
 if st.button("Start"):
     # Call WebPdfSearch endpoint
-    response1 = requests.post('http://localhost:5000/api/v1/web_pdf_search', json={"argument": argument})
+    response1 = requests.post(f'{api_service_url}/api/v1/web_pdf_search', json={"argument": argument})
     if response1.status_code == 200:
         st.write("WebPdfSearch completed successfully")
 
         # Call ImportDocuments endpoint
-        response2 = requests.post('http://localhost:5000/api/v1/import_documents', json={"location": "global"})
+        response2 = requests.post(f'{api_service_url}/api/v1/import_documents', json={"location": "global"})
         if response2.status_code == 200:
             st.write("ImportDocuments completed successfully")
 
             # Call PdfGenerator endpoint
-            response3 = requests.post('http://localhost:5000/api/v1/pdf_generator', json={"argument": argument})
+            response3 = requests.post(f'{api_service_url}/api/v1/pdf_generator', json={"argument": argument})
             if response3.status_code == 200:
                 st.write("PdfGenerator completed successfully")
 
