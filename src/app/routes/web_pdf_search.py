@@ -1,19 +1,33 @@
-from flask import request, jsonify
-from flask_restx import Resource
-import requests
 import os
+from io import BytesIO
+
+import requests
+from flask import jsonify, request
+from flask_restx import Resource
+from werkzeug.utils import secure_filename
+
+from ..utils.gcp_utils import upload_file_to_bucket
+
 
 class WebPdfSearch(Resource):
     def post(self):
         data = request.get_json(force=True)
         argument = data.get("argument")
 
-        search_engine_id = os.getenv('GOOGLE_PROGRAMMABLE_SEARCH_ENGINE_ID')
-        api_key = os.getenv('GOOGLE_PROGRAMMABLE_SEARCH_API_KEY')
+        search_engine_id = os.getenv("GOOGLE_PROGRAMMABLE_SEARCH_ENGINE_ID")
+        api_key = os.getenv("GOOGLE_PROGRAMMABLE_SEARCH_API_KEY")
 
         pdf_urls = self.search_pdfs(argument, api_key, search_engine_id)
 
-        return jsonify(pdf_urls)
+        uploaded_files = []
+        for url in pdf_urls:
+            response = requests.get(url)
+            file_object = BytesIO(response.content)
+            filename = secure_filename(url.split("/")[-1])
+            result = upload_file_to_bucket(file_object, filename)
+            uploaded_files.append(result)
+
+        return {"results": uploaded_files, "status": 200}
 
     def search_pdfs(self, argument, api_key, search_engine_id):
         search_url = "https://www.googleapis.com/customsearch/v1"
