@@ -22,14 +22,13 @@ if st.button("Start"):
             if response3.status_code == 200:
                 st.write("PdfGenerator completed successfully")
 
-                # Save the PDF file to a location that's accessible via a URL
-                with open('output.pdf', 'wb') as f:
-                    f.write(response3.content)
+                # Convert the PDF content to a base64 string
+                pdf_base64 = base64.b64encode(response3.content).decode()
 
                 # Display the PDF file
                 st.markdown("Here is the generated PDF file:")
                 st.markdown(
-                    f'<iframe src="data:application/pdf;base64,{base64.b64encode(response3.content).decode()}" width="700" height="700" type="application/pdf"></iframe>',
+                    f'<iframe src="data:application/pdf;base64,{pdf_base64}" width="700" height="700" type="application/pdf"></iframe>',
                     unsafe_allow_html=True,
                 )
             else:
