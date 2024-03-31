@@ -11,4 +11,4 @@ COPY ./ ./app
 
 EXPOSE 8080
 
-CMD ["streamlit", "run", "--server.port", "8080", "--server.enableCORS", "false", "app.py"]
+CMD ["streamlit", "run", "--server.port", "8080", "--server.enableCORS", "false", "/app/app.py"]
