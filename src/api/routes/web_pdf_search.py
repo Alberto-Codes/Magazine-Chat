@@ -21,7 +21,11 @@ class WebPdfSearch(Resource):
 
         uploaded_files = []
         for url in pdf_urls:
-            response = requests.get(url)
+            try:
+                response = requests.get(url)
+            except requests.exceptions.SSLError:
+                print(f"SSL error occurred when trying to download {url}. Skipping this URL.")
+                continue
             file_object = BytesIO(response.content)
             filename = secure_filename(url.split("/")[-1])
             result = upload_file_to_bucket(file_object, filename)
