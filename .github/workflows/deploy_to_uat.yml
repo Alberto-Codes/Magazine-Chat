@@ -27,17 +27,16 @@ jobs:
       - name: Configure Docker
         run: gcloud auth configure-docker
       - name: Build and push Docker image for API
-        run: >
-          docker build -f src/api/Dockerfile -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME_API }}:${{ steps.extract_tag.outputs.TAG }} . &&
+        run: |
+          docker build --progress=plain -f src/api/Dockerfile -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME_API }}:${{ steps.extract_tag.outputs.TAG }} . &&
           docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME_API }}:${{ steps.extract_tag.outputs.TAG }}
       - name: Build and push Docker image for Web
-        run: >
-          docker build -f src/web/Dockerfile -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME_WEB }}:${{ steps.extract_tag.outputs.TAG }} . &&
+        run: |
+          docker build --progress=plain -f src/web/Dockerfile -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME_WEB }}:${{ steps.extract_tag.outputs.TAG }} . &&
           docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME_WEB }}:${{ steps.extract_tag.outputs.TAG }}
       - name: Deploy API to Cloud Run (UAT)
-        run: >
-          gcloud run deploy ${{ env.SERVICE_NAME_API }} --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME_API }}:${{ steps.extract_tag.outputs.TAG }}
-          --region ${{ env.GCP_REGION }} --platform managed --set-env-vars=ENVIRONMENT=UAT,\
+        run: |
+          gcloud run deploy ${{ env.SERVICE_NAME_API }} --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME_API }}:${{ steps.extract_tag.outputs.TAG }} --region ${{ env.GCP_REGION }} --platform managed --set-env-vars=ENVIRONMENT=UAT,\
           FLASK_SECRET_KEY=${{ secrets.FLASK_SECRET_KEY }},\
           GCP_BUCKET_NAME=${{ secrets.GCP_BUCKET_NAME }},\
           GOOGLE_CLOUD_PROJECT=${{ secrets.GCP_PROJECT_ID }},\
@@ -48,6 +47,5 @@ jobs:
       - name: Set API_SERVICE_URL environment variable
         run: echo "API_SERVICE_URL=$(gcloud run services describe ${{ env.SERVICE_NAME_API }} --region ${{ env.GCP_REGION }} --platform managed --format 'value(status.url)')" >> $GITHUB_ENV
       - name: Deploy Web to Cloud Run (UAT)
-        run: >
-          gcloud run deploy ${{ env.SERVICE_NAME_WEB }} --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME_WEB }}:${{ steps.extract_tag.outputs.TAG }}
-          --region ${{ env.GCP_REGION }} --platform managed --set-env-vars=API_SERVICE_URL=${{ env.API_SERVICE_URL }} --allow-unauthenticated --memory 2Gi
+        run: |
+          gcloud run deploy ${{ env.SERVICE_NAME_WEB }} --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME_WEB }}:${{ steps.extract_tag.outputs.TAG }} --region ${{ env.GCP_REGION }} --platform managed --set-env-vars=API_SERVICE_URL=${{ env.API_SERVICE_URL }} --allow-unauthenticated --memory 2Gi
