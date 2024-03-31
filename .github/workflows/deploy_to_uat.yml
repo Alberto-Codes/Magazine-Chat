@@ -28,11 +28,11 @@ jobs:
         run: gcloud auth configure-docker
       - name: Build and push Docker image for API
         run: |
-          docker build --progress=plain -f src/api/Dockerfile -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME_API }}:${{ steps.extract_tag.outputs.TAG }} . &&
+          docker build --progress=plain -f src/api/Dockerfile -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME_API }}:${{ steps.extract_tag.outputs.TAG }} ./src/api &&
           docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME_API }}:${{ steps.extract_tag.outputs.TAG }}
       - name: Build and push Docker image for Web
         run: |
-          docker build --progress=plain -f src/web/Dockerfile -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME_WEB }}:${{ steps.extract_tag.outputs.TAG }} . &&
+          docker build --progress=plain -f src/web/Dockerfile -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME_WEB }}:${{ steps.extract_tag.outputs.TAG }} ./src/web &&
           docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME_WEB }}:${{ steps.extract_tag.outputs.TAG }}
       - name: Deploy API to Cloud Run (UAT)
         run: |
