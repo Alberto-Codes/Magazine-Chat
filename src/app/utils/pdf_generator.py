@@ -110,30 +110,34 @@ def generate_pdf(data):
         elements.append(Paragraph(f"<b>Search Query:</b> {search_query}", normal_style))
 
         # Add the response answer
-        answer = response["Answer"]
-        # Convert Markdown to HTML and replace newlines with <br/> tags
-        html_answer = markdown.markdown(answer.replace("\n", "<br/>"))
-        elements.append(Paragraph("<b>Answer:</b>", normal_style))
-        elements.append(Paragraph(html_answer, normal_style))
+        if isinstance(response, dict) and "Answer" in response:
+            answer = response["Answer"]
+            # Convert Markdown to HTML and replace newlines with <br/> tags
+            html_answer = markdown.markdown(answer.replace("\n", "<br/>"))
+            elements.append(Paragraph("<b>Answer:</b>", normal_style))
+            elements.append(Paragraph(html_answer, normal_style))
 
-        # Add a horizontal line separator
-        line_separator = Table([[""]], colWidths=["100%"], rowHeights=[1])
-        line_separator.setStyle(
-            TableStyle(
-                [
-                    (
-                        "BACKGROUND",
-                        (0, 0),
-                        (-1, -1),
-                        colors.HexColor("#E67E22"),
-                    ),  # Orange
-                    ("LINEWIDTH", (0, 0), (-1, -1), 1),
-                    ("LINESTYLE", (0, 0), (-1, -1), 0),  # Solid line
-                ]
+            # Add a horizontal line separator
+            line_separator = Table([[""]], colWidths=["100%"], rowHeights=[1])
+            line_separator.setStyle(
+                TableStyle(
+                    [
+                        (
+                            "BACKGROUND",
+                            (0, 0),
+                            (-1, -1),
+                            colors.HexColor("#E67E22"),
+                        ),  # Orange
+                        ("LINEWIDTH", (0, 0), (-1, -1), 1),
+                        ("LINESTYLE", (0, 0), (-1, -1), 0),  # Solid line
+                    ]
+                )
             )
-        )
-        elements.append(line_separator)
-        elements.append(PageBreak())
+            elements.append(line_separator)
+            elements.append(PageBreak())
+        else:
+            continue
+
 
     # Build the PDF document
     doc.build(elements, canvasmaker=Canvas)
