@@ -19,6 +19,23 @@
             "jinja": true,
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}/src"
+        },
+        { "name": "Streamlit",
+            "type": "python",
+            "request": "launch",
+            "module": "streamlit",
+            "env": {
+                "STREAMLIT_SERVER_PORT": "8501",
+                "STREAMLIT_SERVER_HEADLESS": "true",
+                "STREAMLIT_SERVER_ENABLECORS": "false"
+            },
+            "args": [
+                "run",
+                "app.py"
+            ],
+            "jinja": true,
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/src/web"
         }
     ]
 }
