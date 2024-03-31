@@ -4,7 +4,8 @@ on:
     tags:
       - '*-rc'
 env:
-  SERVICE_NAME: ${{ vars.SERVICE_NAME_API }}
+  SERVICE_NAME_API: ${{ vars.SERVICE_NAME_API }}
+  SERVICE_NAME_WEB: ${{ vars.SERVICE_NAME_WEB }}
   GCP_REGION: ${{ vars.GCP_REGION }}
 jobs:
   deploy:
@@ -25,26 +26,26 @@ jobs:
         uses: google-github-actions/setup-gcloud@v2
       - name: Configure Docker
         run: gcloud auth configure-docker
-      - name: Build and push Docker image
+      - name: Build and push Docker image for API
         run: >
-          docker build 
-          -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME }}:${{ steps.extract_tag.outputs.TAG }} 
-          .
-          && docker push 
-          gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME }}:${{ steps.extract_tag.outputs.TAG }}
-      - name: Deploy to Cloud Run (UAT)
+          docker build -f src/api/Dockerfile -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME_API }}:${{ steps.extract_tag.outputs.TAG }} . &&
+          docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME_API }}:${{ steps.extract_tag.outputs.TAG }}
+      - name: Build and push Docker image for Web
         run: >
-          gcloud run deploy ${{ env.SERVICE_NAME }} 
-          --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME }}:${{ steps.extract_tag.outputs.TAG }} 
-          --region ${{ env.GCP_REGION }} 
-          --platform managed 
-          --set-env-vars=ENVIRONMENT=UAT,\
+          docker build -f src/web/Dockerfile -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME_WEB }}:${{ steps.extract_tag.outputs.TAG }} . &&
+          docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME_WEB }}:${{ steps.extract_tag.outputs.TAG }}
+      - name: Deploy API to Cloud Run (UAT)
+        run: >
+          gcloud run deploy ${{ env.SERVICE_NAME_API }} --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME_API }}:${{ steps.extract_tag.outputs.TAG }}
+          --region ${{ env.GCP_REGION }} --platform managed --set-env-vars=ENVIRONMENT=UAT,\
           FLASK_SECRET_KEY=${{ secrets.FLASK_SECRET_KEY }},\
           GCP_BUCKET_NAME=${{ secrets.GCP_BUCKET_NAME }},\
           GOOGLE_CLOUD_PROJECT=${{ secrets.GCP_PROJECT_ID }},\
           GCP_SEARCH_DATASTORE_ID=${{ secrets.GCP_SEARCH_DATASTORE_ID }},\
           GOOGLE_PROGRAMMABLE_SEARCH_ENGINE_ID=${{ secrets.GOOGLE_PROGRAMMABLE_SEARCH_ENGINE_ID }},\
           GOOGLE_PROGRAMMABLE_SEARCH_API_KEY=${{ secrets.GOOGLE_PROGRAMMABLE_SEARCH_API_KEY }},\
-          AI_SEARCH_ENGINE_ID=${{ secrets.AI_SEARCH_ENGINE_ID }}
-          --allow-unauthenticated 
-          --memory 2Gi
+          AI_SEARCH_ENGINE_ID=${{ secrets.AI_SEARCH_ENGINE_ID }} --allow-unauthenticated --memory 2Gi
+      - name: Deploy Web to Cloud Run (UAT)
+        run: >
+          gcloud run deploy ${{ env.SERVICE_NAME_WEB }} --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME_WEB }}:${{ steps.extract_tag.outputs.TAG }}
+          --region ${{ env.GCP_REGION }} --platform managed --allow-unauthenticated --memory 2Gi
