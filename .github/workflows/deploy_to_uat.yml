@@ -49,6 +49,6 @@ jobs:
         run: echo "API_SERVICE_URL=$(gcloud run services describe ${{ env.SERVICE_NAME_API }} --region ${{ env.GCP_REGION }} --platform managed --format 'value(status.url)')" >> $GITHUB_ENV
       - name: Deploy Web to Cloud Run (UAT)
         run: |
-          gcloud run deploy ${{ env.SERVICE_NAME_WEB }} --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME_WEB }}:${{ steps.extract_tag.outputs.TAG }} --region ${{ env.GCP_REGION }} --platform managed --set-env-vars=API_SERVICE_URL=${{ env.API_SERVICE_URL }} \
+          gcloud run deploy ${{ env.SERVICE_NAME_WEB }} --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME_WEB }}:${{ steps.extract_tag.outputs.TAG }} --region ${{ env.GCP_REGION }} --platform managed --set-env-vars=API_SERVICE_URL=${{ env.API_SERVICE_URL }}\
           GOOGLE_CLOUD_PROJECT=${{ secrets.GCP_PROJECT_ID }},\
           AI_CHAT_AGENT_ID=${{ secrets.AI_CHAT_AGENT_ID }} --allow-unauthenticated --memory 2Gi
