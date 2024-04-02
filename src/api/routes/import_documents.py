@@ -10,27 +10,34 @@ class ImportDocuments(Resource):
         data = request.get_json(force=True)
         location = data.get("location", "global")
 
+        data_stores = [Config.GCP_SEARCH_DATASTORE_ID, Config.GCP_CHAT_DATASTORE_ID]
+
         client = discoveryengine.DocumentServiceClient()
-        parent = client.branch_path(
-            project=Config.GOOGLE_CLOUD_PROJECT,
-            location=location,
-            data_store=Config.GCP_SEARCH_DATASTORE_ID,
-            branch="default_branch",
-        )
 
-        gcs_uri = f"gs://{Config.GCP_BUCKET_NAME}/*"
+        messages = []
+        for data_store in data_stores:
+            parent = client.branch_path(
+                project=Config.GOOGLE_CLOUD_PROJECT,
+                location=location,
+                data_store=data_store,
+                branch="default_branch",
+            )
 
-        request_body = discoveryengine.ImportDocumentsRequest(
-            parent=parent,
-            gcs_source=discoveryengine.GcsSource(
-                input_uris=[gcs_uri], data_schema="content"
-            ),
-            reconciliation_mode=discoveryengine.ImportDocumentsRequest.ReconciliationMode.INCREMENTAL,
-        )
+            gcs_uri = f"gs://{Config.GCP_BUCKET_NAME}/*"
 
-        operation = client.import_documents(request=request_body)
-        response = operation.result()
+            request_body = discoveryengine.ImportDocumentsRequest(
+                parent=parent,
+                gcs_source=discoveryengine.GcsSource(
+                    input_uris=[gcs_uri], data_schema="content"
+                ),
+                reconciliation_mode=discoveryengine.ImportDocumentsRequest.ReconciliationMode.INCREMENTAL,
+            )
+
+            operation = client.import_documents(request=request_body)
+            response = operation.result()
+
+            messages.append(f"Import operation {operation.operation.name} completed successfully")
 
         return {
-            "message": f"Import operation {operation.operation.name} completed successfully"
+            "messages": messages
         }, 200
