@@ -1,6 +1,5 @@
 import base64
 import os
-import time
 
 import requests
 import streamlit as st
@@ -12,7 +11,6 @@ AI_CHAT_AGENT_ID = os.getenv("AI_CHAT_AGENT_ID")
 
 
 st.set_page_config(page_title="🥑🔍 Food Ingredient Search 🤖", page_icon=":mag:")
-
 st.title("🥑🔍 Food Ingredient Search 🤖")
 st.write(
     "Discover valuable insights about food ingredients using our AI-powered search engine."
@@ -23,32 +21,37 @@ argument = st.text_input(
     "Enter food ingredient",
     key="ingredient_input",
     placeholder="e.g., pork, chicken breast, pineapple, avocado",
-    help="Enter a food ingredient to search for related information.",
+    help="Enter a food ingredient to search for",
 )
-
+if (
+    "last_argument" not in st.session_state
+    or st.session_state["last_argument"] != argument
+):
+    st.session_state["pdf_base64"] = None
+    st.session_state["last_argument"] = argument
 
 if st.button(
     "Start Search", key="start_button", help="Click to initiate the search process."
 ):
-
     response1 = requests.post(
         f"{api_service_url}/api/web_pdf_search/", json={"argument": argument}
     )
     if response1.status_code == 200:
         st.success("WebPdfSearch completed successfully")
-
         response2 = requests.post(
             f"{api_service_url}/api/import_documents/", json={"location": "global"}
         )
         if response2.status_code == 200:
             st.success("ImportDocuments completed successfully")
-
             response3 = requests.post(
                 f"{api_service_url}/api/pdf_generator/", json={"argument": argument}
             )
-
             if response3.status_code == 200:
                 st.success("PdfGenerator completed successfully")
+                # Update the session state with the new PDF content
+                st.session_state["pdf_base64"] = base64.b64encode(
+                    response3.content
+                ).decode()
             else:
                 st.error("PdfGenerator failed")
         else:
@@ -56,15 +59,14 @@ if st.button(
     else:
         st.error("WebPdfSearch failed")
 
-if "response3" in locals() and response3.status_code == 200:
+# Display the PDF from session state if it exists
+if st.session_state["pdf_base64"]:
     st.subheader("Generated PDF")
-
-    pdf_base64 = base64.b64encode(response3.content).decode()
-
     st.markdown(
-        f'<iframe src="data:application/pdf;base64,{pdf_base64}" width="100%" height="700" type="application/pdf"></iframe>',
+        f'<iframe src="data:application/pdf;base64,{st.session_state["pdf_base64"]}" width="100%" height="700" type="application/pdf"></iframe>',
         unsafe_allow_html=True,
     )
+
 
 st.markdown(
     """
