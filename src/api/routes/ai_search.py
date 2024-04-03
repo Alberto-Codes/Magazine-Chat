@@ -1,7 +1,10 @@
+import asyncio
+import concurrent.futures
 import csv
 from io import BytesIO
 
 from fastapi import APIRouter, HTTPException, Request, Response
+from google.api_core import exceptions
 from google.api_core.client_options import ClientOptions
 from google.cloud import discoveryengine
 from google.cloud import discoveryengine_v1 as discoveryengine
@@ -31,11 +34,6 @@ AiSearchRouter = APIRouter()
 BatchAiSearchRouter = APIRouter()
 
 
-@PdfGeneratorRouter.get("/")
-async def get_pdf_generator():
-    return {"message": "PDF Generator API is running"}
-
-
 @PdfGeneratorRouter.post("/")
 async def pdf_generator(request: PdfGeneratorRequest):
     argument = request.argument
@@ -48,36 +46,37 @@ async def pdf_generator(request: PdfGeneratorRequest):
     )
 
 
-@AiSearchRouter.get("/")
-async def get_ai_search():
-    return {"message": "AI Search API is running"}
-
-
 @AiSearchRouter.post("/")
-async def ai_search(request: AiSearchRequest):
-    try:
-        engine_id = request.engine_id or Config.AI_SEARCH_ENGINE_ID
-        preamble = request.preamble
-        search_query = request.search_query
-        location = request.location
+async def perform_ai_search(
+    category, subcategory, preamble, query, max_retries=3, retry_delay=1
+):
+    retries = 0
+    while retries < max_retries:
+        try:
+            location = "global"
+            project_id = Config.GOOGLE_CLOUD_PROJECT
+            client = _create_search_client(location)
+            content_search_spec = _create_content_search_spec(preamble=preamble)
+            ai_request = _create_search_request(
+                project_id, location, engine_id, query, content_search_spec
+            )
 
-        project_id = Config.GOOGLE_CLOUD_PROJECT
-        client = _create_search_client(location)
-        content_search_spec = _create_content_search_spec(preamble=preamble)
-        ai_request = _create_search_request(
-            project_id, location, engine_id, search_query, content_search_spec
-        )
+            search_results = await client.search(ai_request)
+            result = await _format_search_result(search_results)
 
-        search_results = await client.search(ai_request)
-        result = await _format_search_result(search_results)
-
-        return result
-
-    except Exception as e:
-        error_message = (
-            f"An error occurred while processing the search request: {str(e)}"
-        )
-        raise HTTPException(status_code=500, detail=error_message)
+            return {
+                "category": category,
+                "subcategory": subcategory,
+                "preamble": preamble,
+                "search_query": query,
+                "response": result,
+            }
+        except exceptions.ServiceUnavailable as e:
+            retries += 1
+            if retries < max_retries:
+                await asyncio.sleep(retry_delay)
+            else:
+                raise e
 
 
 def _create_search_client(location):
@@ -144,32 +143,40 @@ async def _format_search_result(search_results):
     }
 
 
-@BatchAiSearchRouter.get("/")
-async def get_batch_ai_search():
-    return {"message": "Batch AI Search API is running"}
-
-
 @BatchAiSearchRouter.post("/")
 async def batch_ai_search(request: BatchAiSearchRequest):
     argument = request.argument
     predefined_queries = get_predefined_queries(argument)
     engine_id = Config.AI_SEARCH_ENGINE_ID
 
-    results = []
+    async def perform_ai_search(category, subcategory, preamble, query):
+        location = "global"
+        project_id = Config.GOOGLE_CLOUD_PROJECT
+        client = _create_search_client(location)
+        content_search_spec = _create_content_search_spec(preamble=preamble)
+        ai_request = _create_search_request(
+            project_id, location, engine_id, query, content_search_spec
+        )
 
+        search_results = await client.search(ai_request)
+        result = await _format_search_result(search_results)
+
+        return {
+            "category": category,
+            "subcategory": subcategory,
+            "preamble": preamble,
+            "search_query": query,
+            "response": result,
+        }
+
+    tasks = []
     for category, subcategory, preamble, query in predefined_queries:
-        result = await ai_search(
-            AiSearchRequest(engine_id=engine_id, preamble=preamble, search_query=query)
+        task = asyncio.create_task(
+            perform_ai_search(category, subcategory, preamble, query)
         )
-        results.append(
-            {
-                "category": category,
-                "subcategory": subcategory,
-                "preamble": preamble,
-                "search_query": query,
-                "response": result,
-            }
-        )
+        tasks.append(task)
+
+    results = await asyncio.gather(*tasks)
 
     return {"original_input": argument, "results": results}
 
