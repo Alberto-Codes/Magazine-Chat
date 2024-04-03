@@ -4,9 +4,6 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-flask = "*"
-flask-cors = "*"
-flask-restx = "*"
 google-cloud-storage = "*"
 google-cloud-discoveryengine = "*"
 python-dotenv = "*"
@@ -14,6 +11,9 @@ gunicorn = "*"
 google-cloud = "*"
 reportlab = "*"
 markdown = "*"
+fastapi = "*"
+uvicorn = "*"
+python-multipart = "*"
 
 [dev-packages]
 black = "*"

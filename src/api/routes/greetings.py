@@ -1,6 +1,8 @@
-from flask_restx import Resource
+from fastapi import APIRouter
+
+GreetingsRouter = APIRouter()
 
 
-class Greetings(Resource):
-    def get(self):
-        return {"greeting": "Hello, world!"}
+@GreetingsRouter.get("/")
+def get_greeting():
+    return {"greeting": "Hello, world!"}

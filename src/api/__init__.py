@@ -1,41 +1,35 @@
 import os
 
-from flask import Flask, jsonify
-from flask_cors import CORS
-from flask_restx import Api
-from werkzeug.middleware.proxy_fix import ProxyFix
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
-from .routes import api_v1
+from .routes import api_router
 
 
-def create_app(test_config=None):
-    app = Flask(__name__)
-    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
-
-    if test_config:
-        app.config.update(test_config)
-
-    app.secret_key = os.getenv("FLASK_SECRET_KEY", "supersecret")
-    CORS(app, resources={r"/api/*": {"origins": "*"}})
-
-    api = Api(
-        app,
-        version="1.0",
+def create_app():
+    app = FastAPI(
         title="Content Management API",
         description="A comprehensive API for content interaction and data processing.",
-        doc="/api-docs",
-        prefix="/api",
+        version="1.0",
+        docs_url="/api-docs",
+        openapi_url="/api/openapi.json",
     )
 
-    api.add_namespace(api_v1)
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
-    @app.route("/")
+    app.include_router(api_router, prefix="/api")
+
+    @app.get("/")
     def health_check():
-        return jsonify(
-            {
-                "status": "healthy",
-                "message": "API operational. Visit /api-docs for docs.",
-            }
-        )
+        return {
+            "status": "healthy",
+            "message": "API operational. Visit /api-docs for docs.",
+        }
 
     return app

@@ -1,21 +1,18 @@
-from flask import jsonify, request
-from flask_restx import Resource
-from werkzeug.utils import secure_filename
+from fastapi import APIRouter, File, HTTPException, UploadFile
 
 from ..utils.gcp_utils import upload_file_to_bucket
 
+FileUploadRouter = APIRouter()
 
-class FileUpload(Resource):
-    def post(self):
-        if "file" not in request.files:
-            return {"message": "No file part in the request"}, 400
 
-        file = request.files["file"]
+@FileUploadRouter.post("/")
+async def upload_file(file: UploadFile = File(...)):
+    if not file:
+        raise HTTPException(status_code=400, detail="No file part in the request")
 
-        if file.filename == "":
-            return {"message": "No selected file"}, 400
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="No selected file")
 
-        filename = secure_filename(file.filename)
-        result = upload_file_to_bucket(file, filename)
-
-        return {"results": result, "status": 200}
+    file_bytes = await file.read()
+    result = await upload_file_to_bucket(file_bytes, file.filename)
+    return {"results": result, "status": 200}

@@ -6,7 +6,6 @@ COPY requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY ./ ./app
-COPY ./data/ ./data
+COPY ./ ./api
 
-CMD ["gunicorn", "-w", "1", "-b", "0.0.0.0:8080", "--timeout", "200", "--threads", "8", "app:create_app()"]
+CMD ["uvicorn", "api:create_app()", "--host", "0.0.0.0", "--port", "8080", "--workers", "1", "--timeout-keep-alive", "200", "--log-level", "info"]
