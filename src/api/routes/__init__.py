@@ -1,16 +1,25 @@
-from flask_restx import Namespace
+from fastapi import APIRouter
 
-from .ai_search import AiSearch, BatchAiSearch, PdfGenerator
-from .file_upload import FileUpload
-from .greetings import Greetings
-from .import_documents import ImportDocuments
-from .web_pdf_search import WebPdfSearch
+from .ai_search import AiSearchRouter, BatchAiSearchRouter, PdfGeneratorRouter
+from .file_upload import FileUploadRouter
+from .greetings import GreetingsRouter
+from .import_documents import ImportDocumentsRouter
+from .web_pdf_search import WebPdfSearchRouter
 
-api_v1 = Namespace("v1", description="API Version 1")
-api_v1.add_resource(Greetings, "/greetings")
-api_v1.add_resource(FileUpload, "/upload")
-api_v1.add_resource(ImportDocuments, "/import_documents")
-api_v1.add_resource(AiSearch, "/ai_search")
-api_v1.add_resource(BatchAiSearch, "/batch_ai_search")
-api_v1.add_resource(PdfGenerator, "/pdf_generator")
-api_v1.add_resource(WebPdfSearch, "/web_pdf_search")
+api_router = APIRouter()
+
+api_router.include_router(GreetingsRouter, prefix="/greetings", tags=["Greetings"])
+api_router.include_router(FileUploadRouter, prefix="/upload", tags=["File Upload"])
+api_router.include_router(
+    ImportDocumentsRouter, prefix="/import_documents", tags=["Import Documents"]
+)
+api_router.include_router(AiSearchRouter, prefix="/ai_search", tags=["AI Search"])
+api_router.include_router(
+    BatchAiSearchRouter, prefix="/batch_ai_search", tags=["Batch AI Search"]
+)
+api_router.include_router(
+    PdfGeneratorRouter, prefix="/pdf_generator", tags=["PDF Generator"]
+)
+api_router.include_router(
+    WebPdfSearchRouter, prefix="/web_pdf_search", tags=["Web PDF Search"]
+)

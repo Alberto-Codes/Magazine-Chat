@@ -138,7 +138,6 @@ def generate_pdf(data):
         else:
             continue
 
-
     # Build the PDF document
     doc.build(elements, canvasmaker=Canvas)
     pdf_content = output.getvalue()

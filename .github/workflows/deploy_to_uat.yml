@@ -37,7 +37,6 @@ jobs:
       - name: Deploy API to Cloud Run (UAT)
         run: |
           gcloud run deploy ${{ env.SERVICE_NAME_API }} --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME_API }}:${{ steps.extract_tag.outputs.TAG }} --region ${{ env.GCP_REGION }} --platform managed --set-env-vars=ENVIRONMENT=UAT,\
-          FLASK_SECRET_KEY=${{ secrets.FLASK_SECRET_KEY }},\
           GCP_BUCKET_NAME=${{ secrets.GCP_BUCKET_NAME }},\
           GOOGLE_CLOUD_PROJECT=${{ secrets.GCP_PROJECT_ID }},\
           GCP_SEARCH_DATASTORE_ID=${{ secrets.GCP_SEARCH_DATASTORE_ID }},\
