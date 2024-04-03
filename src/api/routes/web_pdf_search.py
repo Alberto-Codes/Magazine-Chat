@@ -14,6 +14,9 @@ class WebPdfSearchRequest(BaseModel):
 
 WebPdfSearchRouter = APIRouter()
 
+@WebPdfSearchRouter.get("/")
+async def get_web_pdf_search():
+    return {"message": "Web PDF Search API is running"}
 
 @WebPdfSearchRouter.post("/")
 async def web_pdf_search(request: WebPdfSearchRequest):
