@@ -41,8 +41,9 @@ async def pdf_generator(request: PdfGeneratorRequest):
     argument = request.argument
     batch_results = await batch_ai_search(BatchAiSearchRequest(argument=argument))
     pdf_content = generate_pdf(batch_results)
+
     return Response(
-        content=pdf_content,
+        content=pdf_content.getvalue(),
         media_type="application/pdf",
         headers={"Content-Disposition": f"attachment; filename={argument}_recipes.pdf"},
     )
