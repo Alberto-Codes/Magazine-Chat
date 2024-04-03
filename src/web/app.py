@@ -1,5 +1,6 @@
 import base64
 import os
+import time
 
 import requests
 import streamlit as st
@@ -31,20 +32,21 @@ if st.button(
 ):
 
     response1 = requests.post(
-        f"{api_service_url}/api/web_pdf_search", json={"argument": argument}
+        f"{api_service_url}/api/web_pdf_search/", json={"argument": argument}
     )
     if response1.status_code == 200:
         st.success("WebPdfSearch completed successfully")
 
         response2 = requests.post(
-            f"{api_service_url}/api/import_documents", json={"location": "global"}
+            f"{api_service_url}/api/import_documents/", json={"location": "global"}
         )
         if response2.status_code == 200:
             st.success("ImportDocuments completed successfully")
 
             response3 = requests.post(
-                f"{api_service_url}/api/pdf_generator", json={"argument": argument}
+                f"{api_service_url}/api/pdf_generator/", json={"argument": argument}
             )
+
             if response3.status_code == 200:
                 st.success("PdfGenerator completed successfully")
             else:
