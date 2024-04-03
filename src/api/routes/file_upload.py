@@ -5,6 +5,11 @@ from ..utils.gcp_utils import upload_file_to_bucket
 FileUploadRouter = APIRouter()
 
 
+@FileUploadRouter.get("/")
+async def get_file_upload():
+    return {"message": "File Upload API is running"}
+
+
 @FileUploadRouter.post("/")
 async def upload_file(file: UploadFile = File(...)):
     if not file:

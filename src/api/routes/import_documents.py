@@ -12,6 +12,11 @@ class ImportDocumentsRequest(BaseModel):
 ImportDocumentsRouter = APIRouter()
 
 
+@ImportDocumentsRouter.get("/")
+async def get_import_documents():
+    return {"message": "Import Documents API is running"}
+
+
 @ImportDocumentsRouter.post("/")
 async def import_documents(request: ImportDocumentsRequest):
     location = request.location

@@ -31,6 +31,11 @@ AiSearchRouter = APIRouter()
 BatchAiSearchRouter = APIRouter()
 
 
+@PdfGeneratorRouter.get("/")
+async def get_pdf_generator():
+    return {"message": "PDF Generator API is running"}
+
+
 @PdfGeneratorRouter.post("/")
 async def pdf_generator(request: PdfGeneratorRequest):
     argument = request.argument
@@ -41,6 +46,11 @@ async def pdf_generator(request: PdfGeneratorRequest):
         media_type="application/pdf",
         headers={"Content-Disposition": f"attachment; filename={argument}_recipes.pdf"},
     )
+
+
+@AiSearchRouter.get("/")
+async def get_ai_search():
+    return {"message": "AI Search API is running"}
 
 
 @AiSearchRouter.post("/")
@@ -132,6 +142,11 @@ async def _format_search_result(search_results):
         ],
         "Status": "Success",
     }
+
+
+@BatchAiSearchRouter.get("/")
+async def get_batch_ai_search():
+    return {"message": "Batch AI Search API is running"}
 
 
 @BatchAiSearchRouter.post("/")
