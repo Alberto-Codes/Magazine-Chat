@@ -18,10 +18,8 @@ class PdfGeneratorRequest(BaseModel):
 
 
 class AiSearchRequest(BaseModel):
-    engine_id: str = None
     preamble: str = ""
-    search_query: str = None
-    location: str = "global"
+    query: str = None
 
 
 class BatchAiSearchRequest(BaseModel):
@@ -45,23 +43,18 @@ async def pdf_generator(request: PdfGeneratorRequest):
     )
 
 
-@AiSearchRouter.post("/")
-async def ai_search(
-    request: AiSearchRequest,
-    max_retries: int = 3,
-    retry_delay: int = 1,
+async def perform_ai_search(
+    preamble: str, query: str, max_retries: int = 3, retry_delay: int = 1
 ):
     try:
-        engine_id = request.engine_id or Config.AI_SEARCH_ENGINE_ID
-        preamble = request.preamble
-        search_query = request.search_query
-        location = request.location
+        engine_id = Config.AI_SEARCH_ENGINE_ID
+        location = "global"
 
         project_id = Config.GOOGLE_CLOUD_PROJECT
         client = _create_search_client(location)
         content_search_spec = _create_content_search_spec(preamble=preamble)
         ai_request = _create_search_request(
-            project_id, location, engine_id, search_query, content_search_spec
+            project_id, location, engine_id, query, content_search_spec
         )
 
         retries = 0
@@ -82,6 +75,11 @@ async def ai_search(
             f"An error occurred while processing the search request: {str(e)}"
         )
         return {"Status": "Error", "Message": error_message}
+
+
+@AiSearchRouter.post("/")
+async def ai_search(request: AiSearchRequest):
+    return await perform_ai_search(preamble=request.preamble, query=request.query)
 
 
 def _create_search_client(location):
@@ -152,36 +150,26 @@ async def _format_search_result(search_results):
 async def batch_ai_search(request: BatchAiSearchRequest):
     argument = request.argument
     predefined_queries = get_predefined_queries(argument)
-    engine_id = Config.AI_SEARCH_ENGINE_ID
-
-    async def perform_ai_search(category, subcategory, preamble, query):
-        location = "global"
-        project_id = Config.GOOGLE_CLOUD_PROJECT
-        client = _create_search_client(location)
-        content_search_spec = _create_content_search_spec(preamble=preamble)
-        ai_request = _create_search_request(
-            project_id, location, engine_id, query, content_search_spec
-        )
-
-        search_results = await client.search(ai_request)
-        result = await _format_search_result(search_results)
-
-        return {
-            "category": category,
-            "subcategory": subcategory,
-            "preamble": preamble,
-            "search_query": query,
-            "response": result,
-        }
 
     tasks = []
     for category, subcategory, preamble, query in predefined_queries:
-        task = asyncio.create_task(
-            perform_ai_search(category, subcategory, preamble, query)
-        )
-        tasks.append(task)
+        query = query if query else ""
+        preamble = preamble if preamble else ""
+        task = asyncio.create_task(perform_ai_search(preamble, query))
+        tasks.append((category, subcategory, preamble, query, task))
 
-    results = await asyncio.gather(*tasks)
+    results = []
+    for category, subcategory, preamble, query, task in tasks:
+        result = await task
+        results.append(
+            {
+                "category": category,
+                "subcategory": subcategory,
+                "preamble": preamble,
+                "query": "query",
+                "response": result,
+            }
+        )
 
     return {"original_input": argument, "results": results}
 

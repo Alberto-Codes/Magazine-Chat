@@ -98,7 +98,7 @@ def generate_pdf(data):
         category = result["category"]
         subcategory = result["subcategory"]
         preamble = result["preamble"]
-        search_query = result["search_query"]
+        query = result["query"]
         response = result["response"]
 
         # Add category and subcategory
@@ -107,7 +107,7 @@ def generate_pdf(data):
 
         # Add preamble and search query
         elements.append(Paragraph(f"<b>Preamble:</b> {preamble}", normal_style))
-        elements.append(Paragraph(f"<b>Search Query:</b> {search_query}", normal_style))
+        elements.append(Paragraph(f"<b>Search Query:</b> {query}", normal_style))
 
         # Add the response answer
         if isinstance(response, dict) and "Answer" in response:
