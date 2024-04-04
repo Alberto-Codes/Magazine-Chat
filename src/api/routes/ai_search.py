@@ -6,7 +6,6 @@ from io import BytesIO
 from fastapi import APIRouter, HTTPException, Request, Response
 from google.api_core import exceptions
 from google.api_core.client_options import ClientOptions
-from google.cloud import discoveryengine
 from google.cloud import discoveryengine_v1 as discoveryengine
 from pydantic import BaseModel
 
@@ -47,36 +46,42 @@ async def pdf_generator(request: PdfGeneratorRequest):
 
 
 @AiSearchRouter.post("/")
-async def perform_ai_search(
-    category, subcategory, preamble, query, max_retries=3, retry_delay=1
+async def ai_search(
+    request: AiSearchRequest,
+    max_retries: int = 3,
+    retry_delay: int = 1,
 ):
-    retries = 0
-    while retries < max_retries:
-        try:
-            location = "global"
-            project_id = Config.GOOGLE_CLOUD_PROJECT
-            client = _create_search_client(location)
-            content_search_spec = _create_content_search_spec(preamble=preamble)
-            ai_request = _create_search_request(
-                project_id, location, engine_id, query, content_search_spec
-            )
+    try:
+        engine_id = request.engine_id or Config.AI_SEARCH_ENGINE_ID
+        preamble = request.preamble
+        search_query = request.search_query
+        location = request.location
 
-            search_results = await client.search(ai_request)
-            result = await _format_search_result(search_results)
+        project_id = Config.GOOGLE_CLOUD_PROJECT
+        client = _create_search_client(location)
+        content_search_spec = _create_content_search_spec(preamble=preamble)
+        ai_request = _create_search_request(
+            project_id, location, engine_id, search_query, content_search_spec
+        )
 
-            return {
-                "category": category,
-                "subcategory": subcategory,
-                "preamble": preamble,
-                "search_query": query,
-                "response": result,
-            }
-        except exceptions.ServiceUnavailable as e:
-            retries += 1
-            if retries < max_retries:
-                await asyncio.sleep(retry_delay)
-            else:
-                raise e
+        retries = 0
+        while retries < max_retries:
+            try:
+                search_results = await client.search(ai_request)
+                result = await _format_search_result(search_results)
+                return result
+            except exceptions.ServiceUnavailable as e:
+                retries += 1
+                if retries < max_retries:
+                    await asyncio.sleep(retry_delay)
+                else:
+                    raise e
+
+    except Exception as e:
+        error_message = (
+            f"An error occurred while processing the search request: {str(e)}"
+        )
+        return {"Status": "Error", "Message": error_message}
 
 
 def _create_search_client(location):
