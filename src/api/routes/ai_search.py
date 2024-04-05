@@ -43,12 +43,20 @@ async def pdf_generator(request: PdfGeneratorRequest):
     )
 
 
-async def perform_ai_search(preamble: str, query: str, max_retries: int = 3, retry_delay: int = 1):
+async def perform_ai_search(
+    preamble: str, query: str, max_retries: int = 3, retry_delay: int = 1
+):
     """Perform an AI search with retry logic."""
     client = _create_search_client("global")
     content_search_spec = _create_content_search_spec(preamble)
-    ai_request = _create_search_request(Config.GOOGLE_CLOUD_PROJECT, "global", Config.AI_SEARCH_ENGINE_ID, query, content_search_spec)
-    
+    ai_request = _create_search_request(
+        Config.GOOGLE_CLOUD_PROJECT,
+        "global",
+        Config.AI_SEARCH_ENGINE_ID,
+        query,
+        content_search_spec,
+    )
+
     for attempt in range(max_retries):
         try:
             response = await client.search(ai_request)
@@ -97,7 +105,9 @@ def _create_content_search_spec(preamble):
     )
 
 
-def _create_search_request(project_id, location, engine_id, search_query, content_search_spec):
+def _create_search_request(
+    project_id, location, engine_id, search_query, content_search_spec
+):
     """Create a search request with the provided parameters."""
     serving_config = f"projects/{project_id}/locations/{location}/collections/default_collection/engines/{engine_id}/servingConfigs/default_config"
 
@@ -148,13 +158,15 @@ async def batch_ai_search(request: BatchAiSearchRequest):
     results = []
     for category, subcategory, preamble, query, task in tasks:
         result = await task
-        results.append({
-            "category": category,
-            "subcategory": subcategory,
-            "preamble": preamble,
-            "query": query,
-            "response": result,
-        })
+        results.append(
+            {
+                "category": category,
+                "subcategory": subcategory,
+                "preamble": preamble,
+                "query": query,
+                "response": result,
+            }
+        )
 
     return {"original_input": argument, "results": results}
 
