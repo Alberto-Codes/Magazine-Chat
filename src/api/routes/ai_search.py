@@ -1,9 +1,8 @@
 import asyncio
-import concurrent.futures
 import csv
 from io import BytesIO
 
-from fastapi import APIRouter, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Response
 from google.api_core import exceptions
 from google.api_core.client_options import ClientOptions
 from google.cloud import discoveryengine_v1 as discoveryengine
@@ -33,6 +32,7 @@ BatchAiSearchRouter = APIRouter()
 
 @PdfGeneratorRouter.post("/")
 async def pdf_generator(request: PdfGeneratorRequest):
+    """Generate a PDF based on the provided argument."""
     argument = request.argument
     batch_results = await batch_ai_search(BatchAiSearchRequest(argument=argument))
     pdf_content = generate_pdf(batch_results)
@@ -43,46 +43,31 @@ async def pdf_generator(request: PdfGeneratorRequest):
     )
 
 
-async def perform_ai_search(
-    preamble: str, query: str, max_retries: int = 3, retry_delay: int = 1
-):
-    try:
-        engine_id = Config.AI_SEARCH_ENGINE_ID
-        location = "global"
-
-        project_id = Config.GOOGLE_CLOUD_PROJECT
-        client = _create_search_client(location)
-        content_search_spec = _create_content_search_spec(preamble=preamble)
-        ai_request = _create_search_request(
-            project_id, location, engine_id, query, content_search_spec
-        )
-
-        retries = 0
-        while retries < max_retries:
-            try:
-                search_results = await client.search(ai_request)
-                result = await _format_search_result(search_results)
-                return result
-            except exceptions.ServiceUnavailable as e:
-                retries += 1
-                if retries < max_retries:
-                    await asyncio.sleep(retry_delay)
-                else:
-                    raise e
-
-    except Exception as e:
-        error_message = (
-            f"An error occurred while processing the search request: {str(e)}"
-        )
-        return {"Status": "Error", "Message": error_message}
+async def perform_ai_search(preamble: str, query: str, max_retries: int = 3, retry_delay: int = 1):
+    """Perform an AI search with retry logic."""
+    client = _create_search_client("global")
+    content_search_spec = _create_content_search_spec(preamble)
+    ai_request = _create_search_request(Config.GOOGLE_CLOUD_PROJECT, "global", Config.AI_SEARCH_ENGINE_ID, query, content_search_spec)
+    
+    for attempt in range(max_retries):
+        try:
+            response = await client.search(ai_request)
+            return await _format_search_result(response)
+        except exceptions.ServiceUnavailable:
+            if attempt < max_retries - 1:
+                await asyncio.sleep(retry_delay)
+            else:
+                raise HTTPException(status_code=503, detail="Service Unavailable")
 
 
 @AiSearchRouter.post("/")
 async def ai_search(request: AiSearchRequest):
+    """Perform a single AI search."""
     return await perform_ai_search(preamble=request.preamble, query=request.query)
 
 
 def _create_search_client(location):
+    """Create a search client with the specified location."""
     client_options = (
         ClientOptions(api_endpoint=f"{location}-discoveryengine.googleapis.com")
         if location != "global"
@@ -92,6 +77,7 @@ def _create_search_client(location):
 
 
 def _create_content_search_spec(preamble):
+    """Create a content search spec with the provided preamble."""
     return discoveryengine.SearchRequest.ContentSearchSpec(
         snippet_spec=discoveryengine.SearchRequest.ContentSearchSpec.SnippetSpec(
             return_snippet=True
@@ -111,9 +97,8 @@ def _create_content_search_spec(preamble):
     )
 
 
-def _create_search_request(
-    project_id, location, engine_id, search_query, content_search_spec
-):
+def _create_search_request(project_id, location, engine_id, search_query, content_search_spec):
+    """Create a search request with the provided parameters."""
     serving_config = f"projects/{project_id}/locations/{location}/collections/default_collection/engines/{engine_id}/servingConfigs/default_config"
 
     return discoveryengine.SearchRequest(
@@ -131,6 +116,7 @@ def _create_search_request(
 
 
 async def _format_search_result(search_results):
+    """Format the search results."""
     return {
         "Answer": search_results.summary.summary_text,
         "References": [
@@ -148,35 +134,35 @@ async def _format_search_result(search_results):
 
 @BatchAiSearchRouter.post("/")
 async def batch_ai_search(request: BatchAiSearchRequest):
+    """Perform a batch AI search."""
     argument = request.argument
-    predefined_queries = get_predefined_queries(argument)
+    predefined_queries = _get_predefined_queries(argument)
 
     tasks = []
     for category, subcategory, preamble, query in predefined_queries:
-        query = query if query else ""
-        preamble = preamble if preamble else ""
+        query = query or ""
+        preamble = preamble or ""
         task = asyncio.create_task(perform_ai_search(preamble, query))
         tasks.append((category, subcategory, preamble, query, task))
 
     results = []
     for category, subcategory, preamble, query, task in tasks:
         result = await task
-        results.append(
-            {
-                "category": category,
-                "subcategory": subcategory,
-                "preamble": preamble,
-                "query": "query",
-                "response": result,
-            }
-        )
+        results.append({
+            "category": category,
+            "subcategory": subcategory,
+            "preamble": preamble,
+            "query": query,
+            "response": result,
+        })
 
     return {"original_input": argument, "results": results}
 
 
-def get_predefined_queries(argument):
+def _get_predefined_queries(argument):
+    """Retrieve predefined queries based on the provided argument."""
     matched_queries = []
-    with open("api/data/predefined_queries.csv", mode="r") as csvfile:
+    with open(Config.PREDEFINED_QUERIES_FILE, mode="r") as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
             query = row["query"].format(argument)
