@@ -1,6 +1,9 @@
 from fastapi import APIRouter
 
-from .ai_search import AiSearchRouter, BatchAiSearchRouter, PdfGeneratorRouter
+# from ..utils.rag_google_cloud_vertexai_search.chain import (
+#     chain as rag_google_cloud_vertexai_search_chain,
+# )
+from .ai_search import AiSearchRouter, BatchAiSearchRouter, PdfGeneratorRouter, RAGRouter
 from .file_upload import FileUploadRouter
 from .greetings import GreetingsRouter
 from .import_documents import ImportDocumentsRouter
@@ -23,3 +26,5 @@ api_router.include_router(
 api_router.include_router(
     WebPdfSearchRouter, prefix="/web_pdf_search", tags=["Web PDF Search"]
 )
+
+api_router.include_router(RAGRouter, prefix="/run_chain", tags=["RAG"])

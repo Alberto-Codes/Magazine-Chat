@@ -10,7 +10,17 @@ from pydantic import BaseModel
 
 from ..config import Config
 from ..utils.pdf_generator import generate_pdf
+from ..utils.chain import chain, Question
 
+RAGRouter = APIRouter()
+
+class RAGRequest(BaseModel):
+    question: str
+
+@RAGRouter.post("/")
+def run_chain(request: RAGRequest):
+    result = chain.invoke(request.question)
+    return result
 
 class PdfGeneratorRequest(BaseModel):
     argument: str

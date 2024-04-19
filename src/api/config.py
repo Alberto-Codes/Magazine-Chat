@@ -12,4 +12,5 @@ class Config:
     GCP_SEARCH_DATASTORE_ID = os.getenv("GCP_SEARCH_DATASTORE_ID")
     GCP_CHAT_DATASTORE_ID = os.getenv("GCP_CHAT_DATASTORE_ID")
     AI_SEARCH_ENGINE_ID = os.getenv("AI_SEARCH_ENGINE_ID")
+    MODEL_NAME = os.getenv("MODEL_NAME")
     PREDEFINED_QUERIES_FILE = "api/data/predefined_queries.csv"
