@@ -46,7 +46,7 @@ def pdf_generator(request: PdfGeneratorRequest):
 
 
 def perform_ai_search(
-    preamble: str, query: str, max_retries: int = 3, retry_delay: int = 20
+    preamble: str, query: str, max_retries: int = 3, retry_delay: int = 30
 ):
     """Perform an AI search with retry logic."""
     client = _create_search_client("global")
