@@ -30,34 +30,45 @@ if (
     st.session_state["pdf_base64"] = None
     st.session_state["last_argument"] = argument
 
+# Button for WebPdfSearch
 if st.button(
-    "Start Search", key="start_button", help="Click to initiate the search process."
+    "Start WebPdfSearch", key="webpdfsearch_button", help="Click to initiate the WebPdfSearch process."
 ):
     response1 = requests.post(
         f"{api_service_url}/api/web_pdf_search/", json={"argument": argument}
     )
     if response1.status_code == 200:
         st.success("WebPdfSearch completed successfully")
-        response2 = requests.post(
-            f"{api_service_url}/api/import_documents/", json={"location": "global"}
-        )
-        if response2.status_code == 200:
-            st.success("ImportDocuments completed successfully")
-            response3 = requests.post(
-                f"{api_service_url}/api/pdf_generator/", json={"argument": argument}
-            )
-            if response3.status_code == 200:
-                st.success("PdfGenerator completed successfully")
-                # Update the session state with the new PDF content
-                st.session_state["pdf_base64"] = base64.b64encode(
-                    response3.content
-                ).decode()
-            else:
-                st.error("PdfGenerator failed")
-        else:
-            st.error("ImportDocuments failed")
     else:
         st.error("WebPdfSearch failed")
+
+# Button for ImportDocuments
+if st.button(
+    "Start ImportDocuments", key="importdocuments_button", help="Click to initiate the ImportDocuments process."
+):
+    response2 = requests.post(
+        f"{api_service_url}/api/import_documents/", json={"location": "global"}
+    )
+    if response2.status_code == 200:
+        st.success("ImportDocuments completed successfully")
+    else:
+        st.error("ImportDocuments failed")
+
+# Button for PdfGenerator
+if st.button(
+    "Start PdfGenerator", key="pdfgenerator_button", help="Click to initiate the PdfGenerator process."
+):
+    response3 = requests.post(
+        f"{api_service_url}/api/pdf_generator/", json={"argument": argument}
+    )
+    if response3.status_code == 200:
+        st.success("PdfGenerator completed successfully")
+        # Update the session state with the new PDF content
+        st.session_state["pdf_base64"] = base64.b64encode(
+            response3.content
+        ).decode()
+    else:
+        st.error("PdfGenerator failed")
 
 # Display the PDF from session state if it exists
 if st.session_state["pdf_base64"]:
