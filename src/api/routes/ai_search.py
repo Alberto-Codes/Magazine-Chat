@@ -1,11 +1,13 @@
-import asyncio
 import csv
+import time
 from io import BytesIO
 
 from fastapi import APIRouter, HTTPException, Response
 from google.api_core import exceptions
 from google.api_core.client_options import ClientOptions
+from google.api_core.exceptions import ResourceExhausted
 from google.cloud import discoveryengine_v1 as discoveryengine
+from grpc import StatusCode
 from pydantic import BaseModel
 
 from ..config import Config
@@ -31,10 +33,10 @@ BatchAiSearchRouter = APIRouter()
 
 
 @PdfGeneratorRouter.post("/")
-async def pdf_generator(request: PdfGeneratorRequest):
+def pdf_generator(request: PdfGeneratorRequest):
     """Generate a PDF based on the provided argument."""
     argument = request.argument
-    batch_results = await batch_ai_search(BatchAiSearchRequest(argument=argument))
+    batch_results = batch_ai_search(BatchAiSearchRequest(argument=argument))
     pdf_content = generate_pdf(batch_results)
     return Response(
         content=pdf_content,
@@ -43,8 +45,8 @@ async def pdf_generator(request: PdfGeneratorRequest):
     )
 
 
-async def perform_ai_search(
-    preamble: str, query: str, max_retries: int = 3, retry_delay: int = 1
+def perform_ai_search(
+    preamble: str, query: str, max_retries: int = 3, retry_delay: int = 20
 ):
     """Perform an AI search with retry logic."""
     client = _create_search_client("global")
@@ -59,19 +61,19 @@ async def perform_ai_search(
 
     for attempt in range(max_retries):
         try:
-            response = await client.search(ai_request)
-            return await _format_search_result(response)
-        except exceptions.ServiceUnavailable:
-            if attempt < max_retries - 1:
-                await asyncio.sleep(retry_delay)
+            response = client.search(ai_request)
+            return _format_search_result(response)
+        except ResourceExhausted:
+            if attempt < max_retries - 1:  # If this isn't the last attempt
+                time.sleep(retry_delay)  # Wait for a minute before retrying
             else:
-                raise HTTPException(status_code=503, detail="Service Unavailable")
+                raise  # If this is the last attempt, re-raise the exception
 
 
 @AiSearchRouter.post("/")
-async def ai_search(request: AiSearchRequest):
+def ai_search(request: AiSearchRequest):
     """Perform a single AI search."""
-    return await perform_ai_search(preamble=request.preamble, query=request.query)
+    return perform_ai_search(preamble=request.preamble, query=request.query)
 
 
 def _create_search_client(location):
@@ -81,7 +83,7 @@ def _create_search_client(location):
         if location != "global"
         else None
     )
-    return discoveryengine.SearchServiceAsyncClient(client_options=client_options)
+    return discoveryengine.SearchServiceClient(client_options=client_options)
 
 
 def _create_content_search_spec(preamble):
@@ -125,7 +127,7 @@ def _create_search_request(
     )
 
 
-async def _format_search_result(search_results):
+def _format_search_result(search_results):
     """Format the search results."""
     return {
         "Answer": search_results.summary.summary_text,
@@ -136,14 +138,14 @@ async def _format_search_result(search_results):
                     "gs://", "https://storage.cloud.google.com/"
                 ),
             }
-            async for item in search_results
+            for item in search_results
         ],
         "Status": "Success",
     }
 
 
 @BatchAiSearchRouter.post("/")
-async def batch_ai_search(request: BatchAiSearchRequest):
+def batch_ai_search(request: BatchAiSearchRequest):
     """Perform a batch AI search."""
     argument = request.argument
     predefined_queries = _get_predefined_queries(argument)
@@ -152,12 +154,12 @@ async def batch_ai_search(request: BatchAiSearchRequest):
     for category, subcategory, preamble, query in predefined_queries:
         query = query or ""
         preamble = preamble or ""
-        task = asyncio.create_task(perform_ai_search(preamble, query))
+        task = perform_ai_search(preamble, query)
         tasks.append((category, subcategory, preamble, query, task))
 
     results = []
     for category, subcategory, preamble, query, task in tasks:
-        result = await task
+        result = task
         results.append(
             {
                 "category": category,
