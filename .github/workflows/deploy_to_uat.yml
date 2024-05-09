@@ -43,7 +43,7 @@ jobs:
           GCP_CHAT_DATASTORE_ID=${{ secrets.GCP_CHAT_DATASTORE_ID }},\
           GOOGLE_PROGRAMMABLE_SEARCH_ENGINE_ID=${{ secrets.GOOGLE_PROGRAMMABLE_SEARCH_ENGINE_ID }},\
           GOOGLE_PROGRAMMABLE_SEARCH_API_KEY=${{ secrets.GOOGLE_PROGRAMMABLE_SEARCH_API_KEY }},\
-          AI_SEARCH_ENGINE_ID=${{ secrets.AI_SEARCH_ENGINE_ID }} --allow-unauthenticated --memory 2Gi
+          AI_SEARCH_ENGINE_ID=${{ secrets.AI_SEARCH_ENGINE_ID }} --allow-unauthenticated --memory 2Gi --timeout=600
       - name: Set API_SERVICE_URL environment variable
         run: echo "API_SERVICE_URL=$(gcloud run services describe ${{ env.SERVICE_NAME_API }} --region ${{ env.GCP_REGION }} --platform managed --format 'value(status.url)')" >> $GITHUB_ENV
       - name: Deploy Web to Cloud Run (UAT)
